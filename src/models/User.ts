@@ -17,7 +17,7 @@ const UserSchema = new Schema<IUser>(
       type: String,
       required: true,
       unique: true,
-      default: () => `user-${uuidv4().replace(/-/g, '')}`
+      default: () => `user-${uuidv4().split('-')[0]}`
     },
     email: {
       type: String,
