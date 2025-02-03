@@ -16,7 +16,7 @@ const verifyAccessToken = (req: AuthRequest, res: Response, next: NextFunction) 
     try {
         const jwtAccess: any = process.env.JWT_ACCESS_SECRET || '';
         const decoded: any=jwt.verify(token, jwtAccess);
-        req.user = decoded;
+        req.user = decoded.userId;
         next();
     } catch (error) {
         return res.status(401).json({ message:error, status: 401 });

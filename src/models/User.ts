@@ -7,6 +7,8 @@ interface IUser extends Document {
   mobile: string;
   password: string;
   refreshToken:string;
+  otp?:string;
+  otpExpiry?:Date;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -25,7 +27,9 @@ const UserSchema = new Schema<IUser>(
     },
     mobile: { type: String, required: true },
     password: { type: String, required: true },
-    refreshToken:{type:String}
+    refreshToken:{type:String},
+    otp: { type: String},
+    otpExpiry: { type: Date},
   },
   { timestamps: true }
 );
