@@ -69,13 +69,13 @@ const login = async (req: Request, res: Response): Promise<Response> => {
         const accessToken = jwt.sign(
             { userId: user.userId, email: user.email },
             jwtAccess,
-            { expiresIn:'1m' }
+            { expiresIn:'1h' }
         );
 
         const refreshToken = jwt.sign(
             { userId: user.userId, email: user.email },
             jwtRef,
-            { expiresIn:'1d' }
+            { expiresIn:'30d' }
         );
 
         user.refreshToken = refreshToken;
