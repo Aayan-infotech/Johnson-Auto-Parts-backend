@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Copy the .env file before building, so it's available during the build
-COPY .env /app/.env
+COPY .env ./
 
 # Install dependencies
 RUN npm install
