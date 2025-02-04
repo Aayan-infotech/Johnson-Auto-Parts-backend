@@ -1,7 +1,6 @@
 # Use an official Node.js image as the base image
 FROM node:18-alpine AS builder
 
-# Set the working directory inside the container
 WORKDIR /app
 
 # Copy package.json and package-lock.json to install dependencies first (better layer caching)
@@ -20,19 +19,18 @@ RUN npm run build
 # ---- Production Image ----
 FROM node:18-alpine
 
-# Set the working directory
 WORKDIR /app
 
-# Copy only the necessary files from the builder stage
+# Copy necessary files from the builder
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 
-# Install PM2 globally
-RUN npm install -g pm2
+# Copy the .env file manually
+COPY .env /app/dist/.env
 
-# Expose the application port (change if needed)
+# Expose the application port
 EXPOSE 5050
 
-# Command to run the app using PM2
-CMD ["pm2-runtime", "dist/app.js"]
+# Run the server
+CMD ["node", "dist/server.js"]
