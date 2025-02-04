@@ -14,7 +14,7 @@ const verifyAccessToken = (req: AuthRequest, res: Response, next: NextFunction) 
     }
 
     try {
-        const jwtAccess: any = process.env.JWT_ACCESS_SECRET || '';
+        const jwtAccess: any = process.env.JWT_ACCESS_SECRET || 'your-access-secret';
         const decoded: any=jwt.verify(token, jwtAccess);
         req.user = decoded.userId;
         next();
@@ -31,7 +31,7 @@ const refreshAccessToken = async (req: Request, res: Response, next: NextFunctio
     }
 
     try {
-        const jwtRef: any = process.env.JWT_REFRESH_SECRET || '';
+        const jwtRef: any = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret';
         
         const decoded: any = jwt.verify(refreshToken, jwtRef);
         const userId = decoded.userId;

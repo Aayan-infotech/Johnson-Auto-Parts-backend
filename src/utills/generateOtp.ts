@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import jwt from "jsonwebtoken";
 
+const jwtAccess: any = process.env.JWT_ACCESS_SECRET || 'your-access-secret';
 
 const generateOTP = (): string => {
     return Math.floor(1000 + Math.random() * 9000).toString();
@@ -9,8 +10,8 @@ const generateOTP = (): string => {
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: process.env.EMAIL_USER || 'development.aayaninfotech@gmail.com',
+        pass: process.env.EMAIL_PASS || 'defe qhhm kgmu ztkf',
     },
 });
 
@@ -28,7 +29,7 @@ const sendEmail = async (to: string, subject: string, text: string) => {
 };
 
 const generateResetToken = (userId: string): string => {{
-    return jwt.sign({ userId }, process.env.JWT_ACCESS_SECRET as string, { expiresIn: "15m" });
+    return jwt.sign({ userId }, jwtAccess, { expiresIn: "15m" });
 }}
 
 export { generateOTP, sendEmail , generateResetToken}
