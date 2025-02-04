@@ -16,7 +16,7 @@ const verifyAdminToken = (req: AdminAuthRequest, res: Response, next: NextFuncti
     try {
         const jwtAccess: any = process.env.JWT_ACCESS_SECRET || '';
         const decoded: any=jwt.verify(token, jwtAccess);
-        req.user = decoded.AdminAuthRequest;
+        req.user = decoded.email;
         next();
     } catch (error) {
         return res.status(401).json({ message:error, status: 401 });

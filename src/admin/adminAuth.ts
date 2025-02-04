@@ -9,7 +9,7 @@ interface AdminAuthRequest extends Request {
 
 const login = async (req: Request, res: Response) => {
     try {
-        const jwtAccess: any = process.env.JWT_ACCESS_SECRET || 'your-access-secret';
+        const jwtAccess: any = process.env.JWT_ACCESS_SECRET || '';
 
         const { email, password } = req.body;
 
@@ -29,6 +29,7 @@ const login = async (req: Request, res: Response) => {
                 email: email,
                 password: hashedPassword,
             });
+            await admin.save();
         }
 
         const isMatch = await bcrypt.compare(password, admin.password);

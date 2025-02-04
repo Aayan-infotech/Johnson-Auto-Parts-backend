@@ -14,7 +14,7 @@ const verifyAdminToken = (req, res, next) => {
     try {
         const jwtAccess = process.env.JWT_ACCESS_SECRET || '';
         const decoded = jsonwebtoken_1.default.verify(token, jwtAccess);
-        req.user = decoded.AdminAuthRequest;
+        req.user = decoded.email;
         next();
     }
     catch (error) {
