@@ -6,9 +6,6 @@ WORKDIR /app
 # Copy package.json and package-lock.json to install dependencies first (better layer caching)
 COPY package*.json ./
 
-# Copy the .env file before building, so it's available during the build
-COPY .env ./
-
 # Install dependencies
 RUN npm install
 
