@@ -1,15 +1,7 @@
 import mongoose, { Document, Schema } from "mongoose";
+import {IUser} from "./interfaces/IUser";
 import { v4 as uuidv4 } from "uuid";
 
-interface IUser extends Document {
-  userId: string;
-  email: string;
-  mobile: string;
-  password: string;
-  refreshToken:string;
-  otp?:string;
-  otpExpiry?:Date;
-}
 
 const UserSchema = new Schema<IUser>(
   {
