@@ -17,9 +17,12 @@ interface Config {
 async function getConfig(): Promise<Config> {
   if (ENV !== "development") {
     try {
+      console.log(111);
       const data = await secretsManager.getSecretValue({ SecretId: "john-secret" }).promise();
       if (data.SecretString) {
         const secrets = JSON.parse(data.SecretString);
+
+        console.log(222,secrets);
         return {
           MONGO_URI: secrets.MONGO_URI,
           PORT: parseInt(secrets.PORT),
