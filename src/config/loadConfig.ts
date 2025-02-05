@@ -1,9 +1,9 @@
 import dotenv from "dotenv";
-import * as AWS from "aws-sdk";
+import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
 
 dotenv.config();
 const ENV = process.env.NODE_ENV || "production";
-const secretsManager = new AWS.SecretsManager({ region: "us-east-1" });
+const secretsManager = new SecretsManagerClient({ region: "us-east-1" });
 
 interface Config {
   MONGO_URI: string;
@@ -20,20 +20,31 @@ async function getConfig(): Promise<Config> {
   if (ENV === "production") {
     try {
       console.log(111);
-      const data = await secretsManager.getSecretValue({ SecretId: "john-secret" }).promise();
-      if (data.SecretString) {
-        const secrets = JSON.parse(data.SecretString);
-
-        console.log(222,secrets);
-        return {
-          MONGO_URI: secrets.MONGO_URI,
-          PORT: parseInt(secrets.PORT),
-          JWT_ACCESS_SECRET: secrets.JWT_ACCESS_SECRET,
-          JWT_REFRESH_SECRET: secrets.JWT_REFRESH_SECRET,
-          EMAIL_USER: secrets.EMAIL_USER,
-          EMAIL_PASS: secrets.EMAIL_PASS,
-        };
+      const command = new GetSecretValueCommand({
+        SecretId: "john3",
+      });
+      
+      const response = await secretsManager.send(command);
+      
+      if (response.SecretString) {
+        try {
+          const secrets = JSON.parse(response.SecretString);
+          console.log(222,secrets);
+          return {
+            MONGO_URI: secrets.MONGO_URI,
+            PORT: parseInt(secrets.PORT),
+            JWT_ACCESS_SECRET: secrets.JWT_ACCESS_SECRET,
+            JWT_REFRESH_SECRET: secrets.JWT_REFRESH_SECRET,
+            EMAIL_USER: secrets.EMAIL_USER,
+            EMAIL_PASS: secrets.EMAIL_PASS,
+          };
+        } catch (parseError) {
+          console.error("JSON Parse Error:", parseError);
+          console.error("Secret String:", response.SecretString);
+          throw new Error("Failed to parse secret value as JSON");
+        }
       }
+      throw new Error("No secret string found in the response");
     } catch (error) {
       console.error("AWS Secrets Fetch Error:", error);
       throw new Error("Failed to load secrets from AWS Secrets Manager");
