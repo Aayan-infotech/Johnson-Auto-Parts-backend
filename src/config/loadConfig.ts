@@ -15,6 +15,8 @@ interface Config {
 }
 
 async function getConfig(): Promise<Config> {
+  console.log(444,"enter");
+  
   if (ENV !== "development") {
     try {
       console.log(111);
