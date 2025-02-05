@@ -3,7 +3,7 @@ import * as AWS from "aws-sdk";
 
 dotenv.config();
 const ENV = process.env.NODE_ENV || "development";
-const secretsManager = new AWS.SecretsManager({ region: "us-east=1" });
+const secretsManager = new AWS.SecretsManager({ region: "us-east-1" });
 
 interface Config {
   MONGO_URI: string;
