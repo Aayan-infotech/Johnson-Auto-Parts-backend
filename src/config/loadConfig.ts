@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import * as AWS from "aws-sdk";
 
 dotenv.config();
-const ENV = process.env.NODE_ENV || "development";
+const ENV = process.env.NODE_ENV || "production";
 const secretsManager = new AWS.SecretsManager({ region: "us-east-1" });
 
 interface Config {
@@ -17,7 +17,7 @@ interface Config {
 async function getConfig(): Promise<Config> {
   console.log(444,"enter");
   
-  if (ENV !== "development") {
+  if (ENV === "production") {
     try {
       console.log(111);
       const data = await secretsManager.getSecretValue({ SecretId: "john-secret" }).promise();
