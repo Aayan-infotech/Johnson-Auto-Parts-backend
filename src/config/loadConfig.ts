@@ -15,8 +15,6 @@ interface Config {
 }
 
 async function getConfig(): Promise<Config> {
-  console.log(444,"enter");
-  
   if (ENV === "production") {
     try {
       console.log(111);
@@ -29,7 +27,6 @@ async function getConfig(): Promise<Config> {
       if (response.SecretString) {
         try {
           const secrets = JSON.parse(response.SecretString);
-          console.log(222,secrets);
           return {
             MONGO_URI: secrets.MONGO_URI,
             PORT: parseInt(secrets.PORT),
@@ -40,7 +37,6 @@ async function getConfig(): Promise<Config> {
           };
         } catch (parseError) {
           console.error("JSON Parse Error:", parseError);
-          console.error("Secret String:", response.SecretString);
           throw new Error("Failed to parse secret value as JSON");
         }
       }
