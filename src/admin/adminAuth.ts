@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import Admin from "./adminModel";
+import getConfig from "../config/loadConfig";
+
 
 interface AdminAuthRequest extends Request {
     user?: { email: string, role: string };
@@ -9,7 +11,9 @@ interface AdminAuthRequest extends Request {
 
 const login = async (req: Request, res: Response) => {
     try {
-        const jwtAccess: any = process.env.JWT_ACCESS_SECRET || 'your-access-secret';
+    const config = await getConfig();
+
+        const jwtAccess: any = config.JWT_ACCESS_SECRET;
 
         const { email, password } = req.body;
 

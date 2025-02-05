@@ -1,12 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import Admin from "./adminModel";
+import getConfig from "../config/loadConfig";
 
 interface AdminAuthRequest extends Request {
     user?: {email: string ,role:string};
 }
 
-const verifyAdminToken = (req: AdminAuthRequest, res: Response, next: NextFunction) => {
+const verifyAdminToken = async (req: AdminAuthRequest, res: Response, next: NextFunction) => {
+    const config = await getConfig();
     const token = req.headers.authorization?.split(' ')[1];
 
     if (!token) {
@@ -14,7 +15,7 @@ const verifyAdminToken = (req: AdminAuthRequest, res: Response, next: NextFuncti
     }
 
     try {
-        const jwtAccess: any = process.env.JWT_ACCESS_SECRET || '';
+        const jwtAccess: any = config.JWT_ACCESS_SECRET;
         const decoded: any=jwt.verify(token, jwtAccess);
         req.user = decoded.email;
         next();

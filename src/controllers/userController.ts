@@ -1,3 +1,4 @@
+import getConfig from "../config/loadConfig";
 import jwt from 'jsonwebtoken';
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
@@ -45,8 +46,10 @@ const signUp = async (req: Request, res: Response): Promise<Response> => {
 
 const login = async (req: Request, res: Response): Promise<Response> => {
     try {
-        const jwtAccess: any = process.env.JWT_ACCESS_SECRET || 'your-access-secret';
-        const jwtRef: any = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret';
+        const config=await getConfig();
+
+        const jwtAccess: any = config.JWT_ACCESS_SECRET;
+        const jwtRef: any = config.JWT_REFRESH_SECRET;
 
         const { email, password } = req.body;
 
