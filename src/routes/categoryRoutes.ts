@@ -10,7 +10,7 @@ import { verifyAccessToken } from "../middleware/authMiddleware"
 const router = Router();
 
 router.post('/insert', verifyAccessToken, insertCategory);
-router.get('/get-category', verifyAccessToken, getCategories);
+router.get('/get-category', getCategories);
 router.delete('/delete-category/:categoryId', verifyAccessToken, deleteCategory);
 router.put('/update-category/:categoryId', verifyAccessToken, updateCategory);
 
