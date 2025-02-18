@@ -1,10 +1,17 @@
 import { Router, Request, Response } from "express";
 import {
-    insertCategory
+    insertCategory,
+    getCategories,
+    deleteCategory,
+    updateCategory
 }from "../controllers/CategoryController";
+import { verifyAccessToken } from "../middleware/authMiddleware"
 
 const router = Router();
 
-router.post('/inssert',insertCategory);
+router.post('/insert', verifyAccessToken, insertCategory);
+router.get('/get-category', verifyAccessToken, getCategories);
+router.delete('/delete-category/:categoryId', verifyAccessToken, deleteCategory);
+router.put('/update-category/:categoryId', verifyAccessToken, updateCategory);
 
 export default router;
