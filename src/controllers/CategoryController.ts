@@ -65,14 +65,19 @@ const insertCategory = async (req: Request, res: Response) => {
 const getCategories = async (req: Request, res: Response) => {
     try {
       const { lang } = req.query as { lang?: string };
-      const categories = await Category.find();
+      const categories = await Category.find({isActive: true});
   
       const translatedCategories = categories.map((cat) => ({
         id: cat._id,
         name: cat.name[lang as keyof typeof cat.name] || cat.name.en,
       }));
   
-      res.json(translatedCategories);
+      res.status(200).json({
+        success: true,
+        status: 200,
+        message: "Categories fetched successfully!",
+        data: translatedCategories
+    });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch categories" });
     }
@@ -152,13 +157,65 @@ const updateCategory = async(req: Request, res: Response) => {
 };
 
 // update active - block status of the category
+const activeBlockCategory = async(req: Request, res: Response) => {
+    try{
+        const { id } = req.params
 
+        const category = await Category.findOne({categoryId: id});
 
-// edit get categories according to the active status of the category
+        if(!category){
+            return res.status(404).json({
+                success: false,
+                status: 404,
+                message: "Category not found!",
+            });
+        }
+        // Toggle the isActive field
+        category.isActive = !category.isActive;
+        await category.save();
 
+        res.status(200).json({
+            success: true,
+            status: 200,
+            message: `category ${category.isActive ? "activated" : "deactivated"} successfully!`
+        })
+    }
+    catch(error){
+        return res.status(500).json({
+            success: false,
+            status: 500,
+            message: "Internal server error!",
+            error: error
+        });
+    }
+};
+
+// get categories for admin
+const getCategoriesForAdmin = async(req: Request, res: Response) => {
+    try{
+        const categories = await Category.find().lean();
+
+        res.status(200).json({
+            success: true,
+            status: 200,
+            message: "Categories fetched successfully!",
+            data: categories
+        });
+    }
+    catch(error){
+        return res.status(500).json({
+            success: false,
+            status: 500,
+            message: "Internal seerver error!",
+            error: error
+        });
+    }
+}
 export {
     insertCategory,
     getCategories,
     deleteCategory,
-    updateCategory
+    updateCategory,
+    activeBlockCategory,
+    getCategoriesForAdmin
 }
