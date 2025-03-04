@@ -6,4 +6,5 @@ export interface ISubcategory extends Document {
     slug: string;
     picture: string;
     categoryId: string;
+    isActive: boolean;
 }

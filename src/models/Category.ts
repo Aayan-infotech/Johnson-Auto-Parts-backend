@@ -10,8 +10,12 @@ const CategorySchema = new Schema<ICategory>(
             unique: true,
             default: () => `cat-${uuidv4().split('-')[0]}`
         },
-        name: { type: String, required: true, unique: true },
+        name: {
+            en: { type: String, required: true },
+            fr: { type: String },
+          },
         slug: { type: String, required: true, unique: true },
+        isActive: { type: Boolean, default: false },
     },
     { timestamps: true }
 );

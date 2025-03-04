@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import Category from "../models/Category";
+import { translateText } from '../utills/translateService'
 
 const insertCategory = async (req: Request, res: Response) => {
     try {
@@ -14,16 +15,22 @@ const insertCategory = async (req: Request, res: Response) => {
             });
         }
 
+        const nameFr = await translateText(name, "fr");
+
         const category = new Category({
-            name,
-            slug,
+            name:{
+                en: name,
+                fr: nameFr
+            },
+            slug: name,
         });
 
         await category.save();
 
         return res.status(200).json({
             message: "Category inserted successfully",
-            status: 200
+            status: 200,
+            data: category
         })
 
     } catch (error) {
@@ -35,26 +42,42 @@ const insertCategory = async (req: Request, res: Response) => {
 };
 
 // to get category
-const getCategories = async (req: Request, res: Response) => {
-    try{
-        const categories = await Category.find();
+// const getCategories = async (req: Request, res: Response) => {
+//     try{
+//         const categories = await Category.find();
 
-        res.status(200).json({
-            success: true,
-            status: 200,
-            message: "Categories fetched successfully!",
-            data: categories
-        });
+//         res.status(200).json({
+//             success: true,
+//             status: 200,
+//             message: "Categories fetched successfully!",
+//             data: categories
+//         });
+//     }
+//     catch(error){
+//         return res.status(500).json({
+//             success: false,
+//             status: 500,
+//             message: "Inernal server error!",
+//             error: error
+//         });
+//     }
+// };
+const getCategories = async (req: Request, res: Response) => {
+    try {
+      const { lang } = req.query as { lang?: string };
+      const categories = await Category.find();
+  
+      const translatedCategories = categories.map((cat) => ({
+        id: cat._id,
+        name: cat.name[lang as keyof typeof cat.name] || cat.name.en,
+      }));
+  
+      res.json(translatedCategories);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch categories" });
     }
-    catch(error){
-        return res.status(500).json({
-            success: false,
-            status: 500,
-            message: "Inernal server error!",
-            error: error
-        });
-    }
-};
+  };
+  
 
 // delete categories
 const deleteCategory = async(req: Request, res: Response) => {
@@ -62,6 +85,10 @@ const deleteCategory = async(req: Request, res: Response) => {
         const categoryId = req.params.categoryId;
 
         const category = await Category.findOneAndDelete({categoryId});
+
+        // Delete the subcategories also
+        // const subcategory = await Subcategory.findAnd({})
+
         if(!category){
             return res.status(404).json({
                 success: false,
@@ -69,6 +96,7 @@ const deleteCategory = async(req: Request, res: Response) => {
                 message: "Category not found!"
             });
         }
+
 
         res.status(200).json({
             success: true,
@@ -121,7 +149,12 @@ const updateCategory = async(req: Request, res: Response) => {
             error: error
         });
     }
-}
+};
+
+// update active - block status of the category
+
+
+// edit get categories according to the active status of the category
 
 export {
     insertCategory,
