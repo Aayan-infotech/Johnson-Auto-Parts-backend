@@ -211,7 +211,7 @@ const getAllUsers = asyncHandler(async (req: Request, res: Response) => {
     const totalUsers = await User.countDocuments();
     const users = await User.find().skip(skip).limit(limit).lean();
 
-    if (users.length) {
+    if (users.length === 0) {
         res.status(404).json({
             success: false,
             status: 404,
