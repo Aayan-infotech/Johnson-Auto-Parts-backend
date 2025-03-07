@@ -16,13 +16,13 @@ const router = Router();
 // });
 
 router.get('/get-category', getCategories);
-router.delete('/delete-category/:categoryId', verifyAccessToken, deleteCategory);
-router.put('/update-category/:categoryId', verifyAccessToken, updateCategory);
-router.put('/activate-category/:id', activeBlockCategory);
 
 
 // For admin
 router.post('/admin/insert', insertCategory);
 router.get('/admin/get-categories', getCategoriesForAdmin);
+router.put('/admin/activate-category/:id', activeBlockCategory);
+router.put('/admin/update-category/:categoryId', verifyAccessToken, updateCategory);
+router.delete('/admin/delete-category/:categoryId', verifyAccessToken, deleteCategory);
 
 export default router;

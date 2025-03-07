@@ -22,7 +22,7 @@ const insertCategory = async (req: Request, res: Response) => {
                 en: name,
                 fr: nameFr
             },
-            slug: name,
+            slug: slug ? slug : name,
         });
 
         await category.save();
@@ -70,6 +70,7 @@ const getCategories = async (req: Request, res: Response) => {
       const translatedCategories = categories.map((cat) => ({
         id: cat._id,
         name: cat.name[lang as keyof typeof cat.name] || cat.name.en,
+        categoryId: cat.categoryId
       }));
   
       res.status(200).json({
@@ -210,7 +211,9 @@ const getCategoriesForAdmin = async(req: Request, res: Response) => {
             error: error
         });
     }
-}
+};
+
+
 export {
     insertCategory,
     getCategories,

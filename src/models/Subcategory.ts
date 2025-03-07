@@ -10,7 +10,10 @@ const SubcategorySchema = new Schema<ISubcategory>(
             unique: true,
             default: () => `subcat-${uuidv4().split('-')[0]}`
         },
-        name: { type: String, required: true, unique: true },
+        name: {
+            en: { type: String, required: true, unique: true },
+            fr: { type: String },
+        },
         slug: { type: String, required: true, unique: true },
         picture: { type: String, required: false, },
         categoryId: { type: String, required: true },
