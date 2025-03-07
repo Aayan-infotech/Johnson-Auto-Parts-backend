@@ -1,4 +1,4 @@
-# Use an official Node.js image as the base image
+# Use an official Node.js image as the base i
 FROM node:18-alpine AS builder
 
 WORKDIR /app
