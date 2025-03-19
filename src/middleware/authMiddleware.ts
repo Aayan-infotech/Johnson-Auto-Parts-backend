@@ -1,3 +1,4 @@
+import getConfig from "../config/loadConfig";
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import User from "../models/User";
@@ -6,7 +7,8 @@ interface AuthRequest extends Request {
     user?: { userId: string; email: string };
 }
 
-const verifyAccessToken = (req: AuthRequest, res: Response, next: NextFunction) => {
+const verifyAccessToken = async(req: AuthRequest, res: Response, next: NextFunction) => {
+    const config=await getConfig();
     const token = req.headers.authorization?.split(' ')[1];
 
     if (!token) {
@@ -14,7 +16,7 @@ const verifyAccessToken = (req: AuthRequest, res: Response, next: NextFunction) 
     }
 
     try {
-        const jwtAccess: any = process.env.JWT_ACCESS_SECRET || '';
+        const jwtAccess: any = config.JWT_ACCESS_SECRET;
         const decoded: any=jwt.verify(token, jwtAccess);
         req.user = decoded.userId;
         next();
@@ -25,13 +27,14 @@ const verifyAccessToken = (req: AuthRequest, res: Response, next: NextFunction) 
 
 const refreshAccessToken = async (req: Request, res: Response, next: NextFunction) => {
     const refreshToken = req.body.refreshToken;
+    const config=await getConfig();
 
     if (!refreshToken) {
         return res.status(401).json({ message: 'Refresh token is missing', status: 401 });
     }
 
     try {
-        const jwtRef: any = process.env.JWT_REFRESH_SECRET || '';
+        const jwtRef: any = config.JWT_REFRESH_SECRET;
         
         const decoded: any = jwt.verify(refreshToken, jwtRef);
         const userId = decoded.userId;
@@ -44,7 +47,7 @@ const refreshAccessToken = async (req: Request, res: Response, next: NextFunctio
 
         const newAccessToken = jwt.sign(
             { userId, email: decoded.email },
-            process.env.JWT_ACCESS_SECRET || '',
+            config.JWT_ACCESS_SECRET || '',
             { expiresIn: '1h' }
         );
 

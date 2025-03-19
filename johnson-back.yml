@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: johnson-back-deployment  # * Change to your application name
+  labels:
+    app: johnson-back  # * Change to match your app label
+spec:
+  replicas: 2  # * Modify as needed
+  selector:
+    matchLabels:
+      app: johnson-back  # * Change to match your app label
+  template:
+    metadata:
+      labels:
+        app: johnson-back  # * Change to match your app label
+    spec:
+      containers:
+        - name: johnson-back  # * Change to your container name
+          image: amazingatul/johnson-back:v1  # * Update with your Docker image
+          ports:
+            - containerPort: 5050  # * Modify if needed
+    spec:
+      volumes:
+        - name: aws-credentials-volume
+          secret:
+            secretName: aws-credentials
+        - name: app-credentials-volume
+          emptyDir: {}
+        - name: app-logs
+          emptyDir: {}
+
+      initContainers:
+        - name: setup-aws-credentials
+          image: busybox
+          command: ["/bin/sh", "-c"]
+          args:
+            - "echo 'Copying AWS credentials...';
+              cp /secrets/access_key /secrets/secret_key /app-credentials/;
+              ls -l /app-credentials/;
+              echo 'Init container completed successfully'"
+          volumeMounts:
+            - name: aws-credentials-volume
+              mountPath: "/secrets"
+              readOnly: true
+            - name: app-credentials-volume
+              mountPath: "/app-credentials"
+
+      containers:
+        - name: johnson-back
+          image: amazingatul/johnson-back:v1
+          ports:
+            - containerPort: 3129
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: access_key
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: secret_key
+            - name: AWS_REGION
+              value: "us-east-1"
+          volumeMounts:
+            - name: app-credentials-volume
+              mountPath: "/app-credentials"
+              readOnly: true
+            - name: app-logs
+              mountPath: "/var/log/app"
+          resources:
+            limits:
+              cpu: "0.5"  
+              memory: "512Mi"  
+            requests:
+              cpu: "0.2"  
+              memory: "256Mi"
