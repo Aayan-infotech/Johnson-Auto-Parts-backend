@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: johnson-back-service  # * Change to match your service name
+spec:
+  selector:
+    app: johnson-back  # * Change to match your app label
+  ports:
+    - protocol: TCP
+      port: 5050  # * Modify if needed
+      targetPort: 5050  # * Modify if needed
+  type: ClusterIP  # * Change to LoadBalancer if needed
