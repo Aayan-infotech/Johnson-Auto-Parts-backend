@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import Category from "../models/Category";
+import Subcategory from "../models/Subcategory";
 import { translateText } from '../utills/translateService'
 
 const insertCategory = async (req: Request, res: Response) => {
@@ -93,7 +94,14 @@ const deleteCategory = async(req: Request, res: Response) => {
         const category = await Category.findOneAndDelete({categoryId});
 
         // Delete the subcategories also
-        // const subcategory = await Subcategory.findAnd({})
+        await Subcategory.deleteMany({ categoryId });   
+
+        // delete Subsubcategory 
+        // await SubSubcategory.deleteMany({ categoryId }); 
+        
+        // delete products
+        // await Product.deleteMany({ categoryId });   
+
 
         if(!category){
             return res.status(404).json({

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Subcategory from "../models/Subcategory";
 import { translateText } from '../utills/translateService'
+import SubSubcategory from "../models/SubSubcategory";
 
 
 // add subcategory
@@ -88,13 +89,19 @@ const deleteSubcategory = async (req: Request, res: Response) => {
         const id = req.params.id;
 
         const subcategory = await Subcategory.findOneAndDelete({ subcategoryId: id });
-        if (subcategory) {
+        if (!subcategory) {
             return res.status(404).json({
                 success: false,
                 status: 404,
                 message: "Subcategory not found!"
             });
         }
+
+        // delete subsubcategories
+        // await SubSubcategory.deleteMany({ id });
+
+        // delete products
+        // await Product.deleteMany({ id });
 
         res.status(200).json({
             success: false,

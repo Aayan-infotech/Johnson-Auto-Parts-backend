@@ -23,6 +23,6 @@ router.post('/admin/insert', insertCategory);
 router.get('/admin/get-categories', getCategoriesForAdmin);
 router.put('/admin/activate-category/:id', activeBlockCategory);
 router.put('/admin/update-category/:categoryId', verifyAccessToken, updateCategory);
-router.delete('/admin/delete-category/:categoryId', verifyAccessToken, deleteCategory);
+router.delete('/admin/delete-category/:categoryId', deleteCategory);
 
 export default router;

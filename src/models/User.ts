@@ -19,6 +19,7 @@ const UserSchema = new Schema<IUser>(
     },
     mobile: { type: String, required: true },
     password: { type: String, required: true },
+    isActive: { type : Boolean, default: false },
     refreshToken:{type:String},
     otp: { type: String},
     otpExpiry: { type: Date},

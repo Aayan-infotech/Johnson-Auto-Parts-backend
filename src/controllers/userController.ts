@@ -231,11 +231,50 @@ const getAllUsers = asyncHandler(async (req: Request, res: Response) => {
     });
 });
 
+// block/unblock user
+const blockUnblockUser = async(req: Request, res: Response) => {
+    try{
+        const userId = req.params.userId;
+        // console.log(userId)
+
+        const user = await User.findOne({userId: userId});
+        // console.log(user)
+
+        if(!user){
+            return res.status(404).json({
+                success: false,
+                status: 404,
+                message: "User not found!"
+            });
+        }
+
+        user.isActive = !user.isActive;
+        await user.save();
+        console.log(user)
+
+        res.status(200).json({
+            success: true,
+            status: 200,
+            message: `User ${user.isActive ? "unblocked" : "blocked"} successfully!`,
+            data: user.isActive
+        });
+    }
+    catch(error){
+        return res.status(500).json({
+            success: false,
+            status: 500,
+            message: "Internal server error!",
+            error: error,
+        });
+    }
+}; 
+
 export {
     signUp,
     login,
     forgotPassword,
     verifyOtp,
     restPassword,
-    getAllUsers
+    getAllUsers,
+    blockUnblockUser
 };
