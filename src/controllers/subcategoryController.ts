@@ -3,7 +3,6 @@ import Subcategory from "../models/Subcategory";
 import { translateText } from '../utills/translateService'
 import SubSubcategory from "../models/SubSubcategory";
 
-
 // add subcategory
 const AddSubcategory = async (req: Request, res: Response) => {
     try {
