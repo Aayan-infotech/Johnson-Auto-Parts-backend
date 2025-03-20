@@ -19,7 +19,7 @@ async function getConfig(): Promise<Config> {
     try {
       console.log(111);
       const command = new GetSecretValueCommand({
-        SecretId: "john3",
+        SecretId: "john4",
       });
       
       const response = await secretsManager.send(command);
