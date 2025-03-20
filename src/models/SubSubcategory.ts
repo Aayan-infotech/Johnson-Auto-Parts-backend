@@ -7,7 +7,7 @@ const SubSubcategorySchema = new Schema<ISubSubcategory>({
         type: String,
         required: true,
         unique: true,
-        default: () => `subsubcat-${uuidv4().split("-")[0]}`
+        default: () => `subsubcat-${uuidv4()}`
     },
     name: {
         en: {
