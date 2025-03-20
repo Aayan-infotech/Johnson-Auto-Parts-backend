@@ -7,7 +7,10 @@ connectDB();
 
 const app: Application = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: 'http://3.223.253.106:2564',
+    credentials: true
+}));
 
 app.use("/", routes);
 
