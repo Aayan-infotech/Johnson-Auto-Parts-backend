@@ -51,7 +51,7 @@ const getSubSubcategoryBySubcategoryId = async(req: Request, res: Response) => {
     try{
         const subcategoryId = req.params.subcategoryId;
 
-        const subsubcategories = await SubSubcategory.find({subcategoryId: subcategoryId});
+        const subsubcategories = await SubSubcategory.find({subcategoryId: subcategoryId, isActive: true});
 
         if(!subsubcategories || subsubcategories.length === 0){
             return res.status(200).json({
@@ -77,9 +77,41 @@ const getSubSubcategoryBySubcategoryId = async(req: Request, res: Response) => {
             error: error
         });
     }
-}
+};
+
+// get all subsubcategories
+const getAllSubSubcategories = async(req: Request, res: Response) => {
+    try{
+        const subSubcategories = await SubSubcategory.find();
+
+        if(!subSubcategories || subSubcategories.length === 0){
+            return res.status(200).json({
+                success: true,
+                status: 200,
+                message: "No subSubcategories found!",
+                data: subSubcategories
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            status: 200,
+            message: "All subsubcategories fetched!",
+            data: subSubcategories
+        });
+    }
+    catch(error){
+        return res.status(500).json({
+            success: false,
+            status: 500,
+            message: "Internal server error!",
+            error: error
+        });
+    }
+};
 
 export {
     insertsubSubcategory,
-    getSubSubcategoryBySubcategoryId
+    getSubSubcategoryBySubcategoryId,
+    getAllSubSubcategories
 }

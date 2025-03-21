@@ -147,6 +147,40 @@ const getSubcategoryForAdmin = async (req: Request, res: Response) => {
             error: error,
         });
     }
+};
+
+// activate-deactivatae subcategory
+const activateDeactivateSubcategory = async(req: Request, res: Response) => {
+    try{
+        const id = req.params.id;
+
+        const subcategory = await Subcategory.findOne({subcategoryId: id});
+
+        if(!subcategory){
+            return res.status(404).json({
+                success: false,
+                status: 404,
+                message: "Subcategory not found!"
+            });
+        }
+
+        subcategory.isActive = !subcategory.isActive;
+        await subcategory.save();
+
+        res.status(200).json({
+            success: true,
+            status: 200,
+            message: `Subcategory ${subcategory.isActive ? "Activated" : "Deactivated"} successfully!`, 
+        })
+    }
+    catch(error){
+        return res.status(500).json({
+            success: false,
+            status: 500,
+            message: "Internal server error!",
+            error: error
+        });
+    }
 }
 
 
@@ -154,5 +188,6 @@ export {
     AddSubcategory,
     getSubcategoryByCategory,
     deleteSubcategory,
-    getSubcategoryForAdmin
+    getSubcategoryForAdmin,
+    activateDeactivateSubcategory
 }
