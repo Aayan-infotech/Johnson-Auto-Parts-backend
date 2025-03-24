@@ -35,12 +35,12 @@ export const getProductById = async (req: Request, res: Response) => {
 export const updateProduct = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const updateData = req.body; // Only update the fields provided in the request body
+        const updateData = req.body; 
 
         const updatedProduct = await Product.findByIdAndUpdate(
             id,
-            { $set: updateData }, // Update only the provided fields
-            { new: true, runValidators: true } // Return the updated document & validate fields
+            { $set: updateData }, 
+            { new: true, runValidators: true } 
         );
 
         if (!updatedProduct) {
