@@ -1,10 +1,9 @@
 import mongoose, { Schema } from "mongoose";
-import { IProduct } from ".././interfaces/IProduct"; // Importing the interface
+import { IProduct } from "./interfaces/IProduct"; // Importing the interface
 
 const ProductSchema = new Schema<IProduct>({
-    categoryId: { type: String, required: true },
-    subcategoryId: { type: String, required: true },
-    name: { type: String, required: true, unique: true },
+    SubSubcategory: { type: String, required: true },
+    name: { type: String, required: true, },
     description: { type: String, required: true },
     price: {
         actualPrice: { type: Number, required: true },
@@ -18,5 +17,4 @@ const ProductSchema = new Schema<IProduct>({
     timestamps: true
 });
 
-// Exporting the model
 export default mongoose.model<IProduct>("Product", ProductSchema);

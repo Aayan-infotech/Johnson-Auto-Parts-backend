@@ -1,8 +1,8 @@
 import { Document } from "mongoose";
 
 export interface IProduct extends Document {
-    categoryId: string;
-    subcategoryId: string;
+
+    SubSubcategory: string;
     name: string;
     description: string;
     price: {
