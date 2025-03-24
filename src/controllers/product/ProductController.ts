@@ -52,7 +52,7 @@ export const updateProduct = async (req: Request, res: Response) => {
         res.status(500).json({ message: "Error updating product", error });
     }
 };
-x
+
 
 export const deleteProduct = async (req: Request, res: Response) => {
     try {
