@@ -35,9 +35,9 @@ const insertCategory = async (req: Request, res: Response) => {
         })
 
     } catch (error) {
-        return res.status(500).json({
+        return res.status(404).json({
             messages: error,
-            status: 500
+            status: 404
         });
     }
 };
@@ -55,9 +55,9 @@ const insertCategory = async (req: Request, res: Response) => {
 //         });
 //     }
 //     catch(error){
-//         return res.status(500).json({
+//         return res.status(404).json({
 //             success: false,
-//             status: 500,
+//             status: 404,
 //             message: "Inernal server error!",
 //             error: error
 //         });
@@ -81,7 +81,7 @@ const getCategories = async (req: Request, res: Response) => {
         data: translatedCategories
     });
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch categories" });
+      res.status(404).json({ error: "Failed to fetch categories" });
     }
   };
   
@@ -119,9 +119,9 @@ const deleteCategory = async(req: Request, res: Response) => {
         });
     }
     catch(error){
-        return res.status(500).json({
+        return res.status(404).json({
             success: false,
-            status: 500,
+            status: 404,
             message: "Internal server error!",
             error: error
         });
@@ -156,9 +156,9 @@ const updateCategory = async(req: Request, res: Response) => {
 
     }
     catch(error){
-        return res.status(500).json({
+        return res.status(404).json({
             success: false,
-            status: 500,
+            status: 404,
             message: "Internal server error!",
             error: error
         });
@@ -190,9 +190,9 @@ const activeBlockCategory = async(req: Request, res: Response) => {
         })
     }
     catch(error){
-        return res.status(500).json({
+        return res.status(404).json({
             success: false,
-            status: 500,
+            status: 404,
             message: "Internal server error!",
             error: error
         });
@@ -212,9 +212,9 @@ const getCategoriesForAdmin = async(req: Request, res: Response) => {
         });
     }
     catch(error){
-        return res.status(500).json({
+        return res.status(404).json({
             success: false,
-            status: 500,
+            status: 404,
             message: "Internal seerver error!",
             error: error
         });

@@ -39,9 +39,9 @@ const signUp = async (req: Request, res: Response): Promise<Response> => {
         });
 
     } catch (error) {
-        return res.status(500).json({
+        return res.status(404).json({
             messages: error,
-            status: 500
+            status: 404
         });
     }
 }
@@ -98,9 +98,9 @@ const login = async (req: Request, res: Response): Promise<Response> => {
         });
 
     } catch (error) {
-        return res.status(500).json({
+        return res.status(404).json({
             messages: error,
-            status: 500
+            status: 404
         });
     }
 }
@@ -128,9 +128,9 @@ const forgotPassword = async (req: Request, res: Response) => {
         });
 
     } catch (error) {
-        return res.status(500).json({
+        return res.status(404).json({
             messages: error,
-            status: 500
+            status: 404
         });
     }
 }
@@ -165,9 +165,9 @@ const verifyOtp = async (req: Request, res: Response) => {
         })
 
     } catch (error) {
-        return res.status(500).json({
+        return res.status(404).json({
             messages: error,
-            status: 500
+            status: 404
         });
     }
 }
@@ -194,9 +194,9 @@ const restPassword = async (req: AuthRequest, res: Response) => {
         })
 
     } catch (error) {
-        return res.status(500).json({
+        return res.status(404).json({
             messages: error,
-            status: 500
+            status: 404
         });
     }
 }
@@ -260,9 +260,9 @@ const blockUnblockUser = async(req: Request, res: Response) => {
         });
     }
     catch(error){
-        return res.status(500).json({
+        return res.status(404).json({
             success: false,
-            status: 500,
+            status: 404,
             message: "Internal server error!",
             error: error,
         });
