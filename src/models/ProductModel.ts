@@ -2,7 +2,9 @@ import mongoose, { Schema } from "mongoose";
 import { IProduct } from "./interfaces/IProduct"; // Importing the interface
 
 const ProductSchema = new Schema<IProduct>({
-    SubSubcategory: { type: String, required: true },
+    Category:{ type: String, required: true },
+    SubCategory:{ type: String, },
+    SubSubcategory: { type: String, },
     name: { type: String, required: true, },
     description: { type: String, required: true },
     price: {
