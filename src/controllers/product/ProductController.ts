@@ -55,10 +55,10 @@ export const createProduct = async (req: Request, res: Response) => {
         });
 
         await product.save();
-        res.status(201).json({ message: "Product created successfully", product });
+        res.status(200).json({ message: "Product created successfully", product });
 
     } catch (error) {
-        res.status(500).json({ message: "Error creating product", error });
+        res.status(404).json({ message: "Error creating product", error });
     }
 };
 
@@ -70,7 +70,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
       .status(200)
       .json({ success:true,message: "Products Fetched Successfully", products });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching products", error });
+    res.status(404).json({ message: "Error fetching products", error });
   }
 };
 
@@ -82,7 +82,7 @@ export const getProductById = async (req: Request, res: Response) => {
     }
     res.status(200).json(product);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching product", error });
+    res.status(404).json({ message: "Error fetching product", error });
   }
 };
 export const getProductBySubCategoryOrSubSubCategory = async (req: Request, res: Response) => {
@@ -92,7 +92,7 @@ export const getProductBySubCategoryOrSubSubCategory = async (req: Request, res:
         const subcategoryExist=await Subcategory.findById(id)
         if(subsubcategoryExist){
             const productsData=await Product.find({SubSubcategory:id})
-            return res.status(201).json({
+            return res.status(200).json({
                 success:true,
                 message:`Products with Sub-Sub-Category ${id} fetched successfully`,
                 productsData
@@ -100,20 +100,20 @@ export const getProductBySubCategoryOrSubSubCategory = async (req: Request, res:
         }
         else if(subcategoryExist){
             const productsData=await Product.find({SubCategory:id})
-            return res.status(201).json({
+            return res.status(200).json({
                 success:true,
                 message:`Products with Sub-Category ${id} fetched successfully`,
                 productsData
             })
         }
         else{
-            return res.status(500).json({
+            return res.status(404).json({
                 success:false,
                 message:"Invalid Id. Please provide a valid sub-categoryId or Sub-SubCategoryId"
             })
         }
     } catch (error) {
-        res.status(500).json({ message: "Error fetching product", error });
+        res.status(404).json({ message: "Error fetching product", error });
     }
 };
 
@@ -150,7 +150,7 @@ export const updateProduct = async (req: Request, res: Response) => {
       .status(200)
       .json({ message: "Product updated successfully", updatedProduct });
   } catch (error) {
-    res.status(500).json({ message: "Error updating product", error });
+    res.status(404).json({ message: "Error updating product", error });
   }
 };
 
@@ -162,6 +162,6 @@ export const deleteProduct = async (req: Request, res: Response) => {
     }
     res.status(200).json({ message: "Product deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Error deleting product", error });
+    res.status(404).json({ message: "Error deleting product", error });
   }
 };

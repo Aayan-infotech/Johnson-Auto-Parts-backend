@@ -22,9 +22,9 @@ export const addReview = async (req: Request, res: Response) => {
         const review = new Review({ productId, userId, rating, comment });
         await review.save();
 
-        res.status(201).json({ message: "Review added successfully", review });
+        res.status(200).json({ message: "Review added successfully", review });
     } catch (error) {
-        res.status(500).json({ message: "Server error", error });
+        res.status(404).json({ message: "Server error", error });
     }
 };
 export const getReviews = async (req: Request, res: Response) => {
@@ -34,7 +34,7 @@ export const getReviews = async (req: Request, res: Response) => {
 
         res.status(200).json({ reviews });
     } catch (error) {
-        res.status(500).json({ message: "Server error", error });
+        res.status(404).json({ message: "Server error", error });
     }
 };
 
@@ -47,7 +47,7 @@ export const getAllReviewsWithUserDetails = async (req: Request, res: Response) 
 
         res.status(200).json({ success: true, data: reviews });
     } catch (error) {
-        res.status(500).json({ success: false, message: "Server error", error });
+        res.status(404).json({ success: false, message: "Server error", error });
     }
 };
 
@@ -84,7 +84,7 @@ export const getAllReviewsWithAverage = async (req: Request, res: Response) => {
 
         res.status(200).json({ success: true, data: reviews });
     } catch (error) {
-        res.status(500).json({ success: false, message: "Server error", error });
+        res.status(404).json({ success: false, message: "Server error", error });
     }
 };
 

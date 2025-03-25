@@ -52,9 +52,9 @@ const login = async (req: Request, res: Response) => {
         });
 
     } catch (error) {
-        return res.status(500).json({
+        return res.status(404).json({
             messages: error,
-            status: 500
+            status: 404
         });
     }
 }
@@ -91,9 +91,9 @@ const changeAdminPass = async (req: AdminAuthRequest, res: Response) => {
         });
 
     } catch (error) {
-        return res.status(500).json({
+        return res.status(404).json({
             messages: error,
-            status: 500
+            status: 404
         });
     }
 }

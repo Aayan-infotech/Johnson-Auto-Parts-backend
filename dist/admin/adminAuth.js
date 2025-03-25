@@ -50,9 +50,9 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         });
     }
     catch (error) {
-        return res.status(500).json({
+        return res.status(404).json({
             messages: error,
-            status: 500
+            status: 404
         });
     }
 });
@@ -84,9 +84,9 @@ const changeAdminPass = (req, res) => __awaiter(void 0, void 0, void 0, function
         });
     }
     catch (error) {
-        return res.status(500).json({
+        return res.status(404).json({
             messages: error,
-            status: 500
+            status: 404
         });
     }
 });
