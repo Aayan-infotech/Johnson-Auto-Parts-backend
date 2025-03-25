@@ -54,22 +54,31 @@ const AddSubcategory = async (req: Request, res: Response) => {
 // getsubcategory on the basis of category 
 const getSubcategoryByCategory = async (req: Request, res: Response) => {
     try {
+        const {lang} = req.query as { lang?: string }; 
         const { categoryId } = req.params;
 
-        const Subcategories = await Subcategory.find({ categoryId: categoryId });
-        // if(Subcategories.length === 0){
-        //     return res.status(404).json({
-        //         success: false,
-        //         status: 404,
-        //         message: "No subcategory found!"
-        //     })
-        // }
+        const subcategories = await Subcategory.find({isActive: true, categoryId: categoryId });
+
+        const translatedSubcategories = subcategories.map((cat)=> ({
+            id: cat._id,
+            name: cat.name[lang as keyof typeof cat.name] || cat.name.en,
+            categoryId: cat.categoryId,
+            subcategoryId: cat.subcategoryId,
+        }))
+        if(subcategories.length === 0){
+            return res.status(200).json({
+                success: false,
+                status: 200,
+                message: "No subcategory found!",
+                data: translatedSubcategories
+            })
+        }
 
         res.status(200).json({
             success: true,
             status: 200,
             message: "Subcategory fetched successfully!",
-            data: Subcategories
+            data: translatedSubcategories
         });
     }
     catch (error) {

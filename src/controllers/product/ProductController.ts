@@ -1,11 +1,14 @@
 import { Request, Response } from "express";
 import Product from "../../models/ProductModel";
+
 import Category from "../../models/Category";
 import Subcategory from "../../models/Subcategory";
+
 import SubSubcategory from "../../models/SubSubcategory";
 
 // Create a new product
 export const createProduct = async (req: Request, res: Response) => {
+
     try {
         const { categoryId, subcategoryId, subsubcategoryId, name, description, price, brand, picture, quantity, isActive } = req.body;
 
@@ -46,34 +49,50 @@ export const createProduct = async (req: Request, res: Response) => {
             picture,
             quantity: quantity ?? 0,
             isActive: isActive ?? true,
-        });
 
-        await product.save();
-        res.status(201).json({ message: "Product created successfully", product });
-    } catch (error) {
-        res.status(500).json({ message: "Error creating product", error });
+        });
     }
+
+    // Create a new product
+    const product = new Product({
+      SubSubcategory: subsubcategoryId,
+      name,
+      description,
+      price,
+      brand,
+      picture,
+      quantity,
+      isActive,
+    });
+
+    await product.save();
+    res.status(201).json({ message: "Product created successfully", product });
+  } catch (error) {
+    res.status(500).json({ message: "Error creating product", error });
+  }
 };
 
 export const getAllProducts = async (req: Request, res: Response) => {
-    try {
-        const products = await Product.find();
-        res.status(200).json(products);
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching products", error });
-    }
+  try {
+    const products = await Product.find();
+    res
+      .status(200)
+      .json({ success:true,message: "Products Fetched Successfully", products });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching products", error });
+  }
 };
 
 export const getProductById = async (req: Request, res: Response) => {
-    try {
-        const product = await Product.findById(req.params.id);
-        if (!product) {
-            return res.status(404).json({ message: "Product not found" });
-        }
-        res.status(200).json(product);
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching product", error });
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
     }
+    res.status(200).json(product);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching product", error });
+  }
 };
 export const getProductBySubCategoryOrSubSubCategory = async (req: Request, res: Response) => {
     try {
@@ -108,6 +127,7 @@ export const getProductBySubCategoryOrSubSubCategory = async (req: Request, res:
 };
 
 export const updateProduct = async (req: Request, res: Response) => {
+
     try {
         const { productId } = req.params;
         const { name, price, discount, quantity, categoryId, subcategoryId, subsubcategoryId } = req.body;
@@ -135,20 +155,22 @@ export const updateProduct = async (req: Request, res: Response) => {
             { new: true, runValidators: true }
         );
 
-        res.status(200).json({ message: "Product updated successfully", updatedProduct });
-    } catch (error) {
-        res.status(500).json({ message: "Error updating product", error });
-    }
+    res
+      .status(200)
+      .json({ message: "Product updated successfully", updatedProduct });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating product", error });
+  }
 };
 
 export const deleteProduct = async (req: Request, res: Response) => {
-    try {
-        const deletedProduct = await Product.findByIdAndDelete(req.params.id);
-        if (!deletedProduct) {
-            return res.status(404).json({ message: "Product not found" });
-        }
-        res.status(200).json({ message: "Product deleted successfully" });
-    } catch (error) {
-        res.status(500).json({ message: "Error deleting product", error });
+  try {
+    const deletedProduct = await Product.findByIdAndDelete(req.params.id);
+    if (!deletedProduct) {
+      return res.status(404).json({ message: "Product not found" });
     }
+    res.status(200).json({ message: "Product deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting product", error });
+  }
 };
