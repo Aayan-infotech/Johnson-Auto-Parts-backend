@@ -54,24 +54,40 @@ export const getProductById = async (req: Request, res: Response) => {
 
 export const updateProduct = async (req: Request, res: Response) => {
     try {
-        const { id } = req.params;
-        const updateData = req.body;
+        const { productId } = req.params;
+        const { name, price, discount, stock } = req.body;
 
+        // Fetch existing product
+        const existingProduct = await Product.findById(productId);
+        if (!existingProduct) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+
+        // Assign new values while keeping existing structure
+        const updateData = {
+            name: name ?? existingProduct.name,
+            price: {
+                actualPrice: price ?? existingProduct.price.actualPrice,
+                discountPercent: discount ?? existingProduct.price.discountPercent,
+            },
+            quantity: stock ?? existingProduct.quantity,
+        };
+
+        console.log("Updated Data to be saved:", updateData);
+
+        // Update the product
         const updatedProduct = await Product.findByIdAndUpdate(
-            id,
+            productId,
             { $set: updateData },
             { new: true, runValidators: true }
         );
-
-        if (!updatedProduct) {
-            return res.status(404).json({ message: "Product not found" });
-        }
 
         res.status(200).json({ message: "Product updated successfully", updatedProduct });
     } catch (error) {
         res.status(500).json({ message: "Error updating product", error });
     }
 };
+
 
 export const deleteProduct = async (req: Request, res: Response) => {
     try {
