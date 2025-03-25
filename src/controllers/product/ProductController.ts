@@ -8,7 +8,6 @@ import SubSubcategory from "../../models/SubSubcategory";
 
 // Create a new product
 export const createProduct = async (req: Request, res: Response) => {
-
     try {
         const { categoryId, subcategoryId, subsubcategoryId, name, description, price, brand, picture, quantity, isActive } = req.body;
 
@@ -16,11 +15,13 @@ export const createProduct = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Missing required fields." });
         }
 
+        // Check if category exists
         const categoryExists = await Category.findById(categoryId);
         if (!categoryExists) {
             return res.status(400).json({ message: "Invalid categoryId. Category does not exist." });
         }
 
+        // Check if subcategory exists (optional)
         if (subcategoryId) {
             const subcategoryExists = await Subcategory.findById(subcategoryId);
             if (!subcategoryExists) {
@@ -28,6 +29,7 @@ export const createProduct = async (req: Request, res: Response) => {
             }
         }
 
+        // Check if sub-subcategory exists (optional)
         if (subsubcategoryId) {
             const subsubcategoryExists = await SubSubcategory.findById(subsubcategoryId);
             if (!subsubcategoryExists) {
@@ -35,6 +37,7 @@ export const createProduct = async (req: Request, res: Response) => {
             }
         }
 
+        // Create the product only once
         const product = new Product({
             Category: categoryId,
             SubCategory: subcategoryId || "N/A",
@@ -49,28 +52,16 @@ export const createProduct = async (req: Request, res: Response) => {
             picture,
             quantity: quantity ?? 0,
             isActive: isActive ?? true,
-
         });
+
+        await product.save();
+        res.status(201).json({ message: "Product created successfully", product });
+
+    } catch (error) {
+        res.status(500).json({ message: "Error creating product", error });
     }
-
-    // Create a new product
-    const product = new Product({
-      SubSubcategory: subsubcategoryId,
-      name,
-      description,
-      price,
-      brand,
-      picture,
-      quantity,
-      isActive,
-    });
-
-    await product.save();
-    res.status(201).json({ message: "Product created successfully", product });
-  } catch (error) {
-    res.status(500).json({ message: "Error creating product", error });
-  }
 };
+
 
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
