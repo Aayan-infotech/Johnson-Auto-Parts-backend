@@ -7,19 +7,13 @@ interface AuthRequest extends Request {
   user?: { userId: string; email: string };
 }
 
-export const addToCart = async (req: AuthRequest, res: Response) => {
+export const addToCart = async (req: Request, res: Response) => {
   try {
-    const { productId, quantity } = req.body;
-    const userId = req.user?.userId;
+    const { productId, quantity, sessionId } = req.body; // sessionId from frontend or generate a new one
 
-    if (!userId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
-
-    const user = await User.findOne({ userId });
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
+    // if (!sessionId) {
+    //   return res.status(400).json({ success: false, message: "Session ID is required" });
+    // }
 
     const product = await Product.findById(productId);
     if (!product) {
@@ -30,12 +24,13 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
       return res.status(409).json({ success: false, message: "Insufficient stock available" });
     }
 
-    const discountedPrice = product.price.actualPrice - (product.price.actualPrice * (product.price.discountPercent || 0)) / 100;
+    const discountedPrice =
+      product.price.actualPrice - (product.price.actualPrice * (product.price.discountPercent || 0)) / 100;
 
-    let cart = await Cart.findOne({ user: user._id });
+    let cart = await Cart.findOne({ sessionId });
 
     if (!cart) {
-      cart = new Cart({ user: user._id, items: [], totalPrice: 0 });
+      cart = new Cart({ sessionId, items: [], totalPrice: 0 });
     }
 
     const existingItem = cart.items.find((item) => item.product.toString() === productId);
@@ -54,10 +49,12 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
     await cart.save();
 
     res.status(200).json({ success: true, message: "Product added to cart", cart });
+
   } catch (error) {
     res.status(500).json({ success: false, message: "Error adding to cart", error: (error as Error).message });
   }
 };
+
 
 export const getCart = async (req: AuthRequest, res: Response) => {
   try {

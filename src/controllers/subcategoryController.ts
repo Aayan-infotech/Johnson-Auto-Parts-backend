@@ -190,7 +190,9 @@ const activateDeactivateSubcategory = async(req: Request, res: Response) => {
             error: error
         });
     }
-}
+};
+
+
 
 
 export {
