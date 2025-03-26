@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 
 const UserSchema = new Schema<IUser>(
   {
+    name: { type: String, required: true },
     userId: {
       type: String,
       required: true,
