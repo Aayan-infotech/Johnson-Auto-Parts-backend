@@ -7,8 +7,8 @@ interface AuthRequest extends Request {
     user?: { userId: string; email: string };
 }
 
-const verifyAccessToken = async(req: AuthRequest, res: Response, next: NextFunction) => {
-    const config=await getConfig();
+const verifyAccessToken = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const config = await getConfig();
     const token = req.headers.authorization?.split(' ')[1];
 
     if (!token) {
@@ -17,13 +17,19 @@ const verifyAccessToken = async(req: AuthRequest, res: Response, next: NextFunct
 
     try {
         const jwtAccess: any = config.JWT_ACCESS_SECRET;
-        const decoded: any=jwt.verify(token, jwtAccess);
-        req.user = decoded.userId;
+        const decoded: any = jwt.verify(token, jwtAccess);
+
+        req.user = {
+            userId: decoded.userId,
+            email: decoded.email,
+        };
+
         next();
     } catch (error) {
-        return res.status(401).json({ message:error, status: 401 });
+        return res.status(401).json({ message: "Invalid token", status: 401 });
     }
 };
+
 
 const refreshAccessToken = async (req: Request, res: Response, next: NextFunction) => {
     const refreshToken = req.body.refreshToken;
