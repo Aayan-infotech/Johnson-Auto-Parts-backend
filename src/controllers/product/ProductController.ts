@@ -62,58 +62,113 @@ export const createProduct = async (req: Request, res: Response) => {
     }
 };
 
-
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
-    const products = await Product.find();
-    res
-      .status(200)
-      .json({ success:true,message: "Products Fetched Successfully", products });
+    const products = await Product.find().lean();
+
+    // Add discounted price calculation
+    const updatedProducts = products.map(product => {
+      const actualPrice = product.price?.actualPrice || 0;
+      const discountPercent = product.price?.discountPercent || 0;
+      const discountedPrice = actualPrice - (actualPrice * discountPercent) / 100;
+
+      return {
+        ...product,
+        discountedPrice: parseFloat(discountedPrice.toFixed(2)) // Round to 2 decimal places
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Products Fetched Successfully",
+      products: updatedProducts
+    });
+
   } catch (error) {
-    res.status(404).json({ message: "Error fetching products", error });
+    return res.status(500).json({ 
+      success: false,
+      message: "Error fetching products", 
+      error: (error as Error).message 
+    });
   }
 };
 
+
 export const getProductById = async (req: Request, res: Response) => {
-  try {
-    const product = await Product.findById(req.params.id);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
+    try {
+      const product = await Product.findById(req.params.id).lean();
+  
+      if (!product) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "Product not found" 
+        });
+      }
+  
+      const actualPrice = product.price?.actualPrice || 0;
+      const discountPercent = product.price?.discountPercent || 0;
+  
+      const discountedPrice = actualPrice - (actualPrice * discountPercent) / 100;
+  
+      res.status(200).json({ 
+        success: true,
+        message: "Product fetched successfully",
+        product: {
+          ...product,
+          discountedPrice: parseFloat(discountedPrice.toFixed(2)) 
+        }
+      });
+  
+    } catch (error) {
+      res.status(500).json({ 
+        success: false, 
+        message: "Error fetching product", 
+        error: (error as Error).message 
+      });
     }
-    res.status(200).json(product);
-  } catch (error) {
-    res.status(404).json({ message: "Error fetching product", error });
-  }
-};
-export const getProductBySubCategoryOrSubSubCategory = async (req: Request, res: Response) => {
+  };
+  export const getProductBySubCategoryOrSubSubCategory = async (req: Request, res: Response) => {
     try {
         const id = req.params.id;
-        const subsubcategoryExist=await SubSubcategory.findById(id)
-        const subcategoryExist=await Subcategory.findById(id)
-        if(subsubcategoryExist){
-            const productsData=await Product.find({SubSubcategory:id})
-            return res.status(200).json({
-                success:true,
-                message:`Products with Sub-Sub-Category ${id} fetched successfully`,
-                productsData
-            })
-        }
-        else if(subcategoryExist){
-            const productsData=await Product.find({SubCategory:id})
-            return res.status(200).json({
-                success:true,
-                message:`Products with Sub-Category ${id} fetched successfully`,
-                productsData
-            })
-        }
-        else{
+
+        const subsubcategoryExist = await SubSubcategory.findById(id);
+        const subcategoryExist = await Subcategory.findById(id);
+
+        let productsData = [];
+
+        if (subsubcategoryExist) {
+            productsData = await Product.find({ SubSubcategory: id }).lean();
+        } else if (subcategoryExist) {
+            productsData = await Product.find({ SubCategory: id }).lean();
+        } else {
             return res.status(404).json({
-                success:false,
-                message:"Invalid Id. Please provide a valid sub-categoryId or Sub-SubCategoryId"
-            })
+                success: false,
+                message: "Invalid ID. Please provide a valid SubCategoryId or SubSubCategoryId",
+            });
         }
+
+        const updatedProductsData = productsData.map(product => {
+            const actualPrice = product.price?.actualPrice || 0;
+            const discountPercent = product.price?.discountPercent || 0;
+            const discountedPrice = actualPrice - (actualPrice * discountPercent) / 100;
+
+            return {
+                ...product,
+                discountedPrice: parseFloat(discountedPrice.toFixed(2)) // Ensure rounded to 2 decimal places
+            };
+        });
+        return res.status(200).json({
+            success: true,
+            message: `Products fetched successfully for ID ${id}`,
+            productsData: updatedProductsData
+        });
+
     } catch (error) {
-        res.status(404).json({ message: "Error fetching product", error });
+        return res.status(500).json({ 
+            success: false,
+            message: "Error fetching products", 
+            error: (error as Error).message 
+        });
     }
 };
 

@@ -41,11 +41,11 @@ export const getReviews = async (req: Request, res: Response) => {
 export const getAllReviewsWithUserDetails = async (req: Request, res: Response) => {
     try {
         const reviews = await Review.find()
-            .populate("userId", "name image") // Populate user name and image
-            .populate("productId", "name") // Populate product name
-            .sort({ createdAt: -1 }); // Sort by latest reviews
+            .populate("userId", "name image")
+            .populate("productId", "name") 
+            .sort({ createdAt: -1 }); 
 
-        res.status(200).json({ success: true, data: reviews });
+        res.status(200).json({ success: true,message:"Reviews fetched successfully", data: reviews });
     } catch (error) {
         res.status(404).json({ success: false, message: "Server error", error });
     }

@@ -13,7 +13,14 @@ interface AuthRequest extends Request {
 
 const signUp = async (req: Request, res: Response): Promise<Response> => {
     try {
-        const { email, mobile, password } = req.body;
+        const { name, email, mobile, password } = req.body;
+
+        if (!name || !email || !mobile || !password) {
+            return res.status(400).json({
+                message: "All fields are required",
+                status: 400
+            });
+        }
 
         const existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -26,6 +33,7 @@ const signUp = async (req: Request, res: Response): Promise<Response> => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const newUser = new User({
+            name,
             email,
             mobile,
             password: hashedPassword,
@@ -39,12 +47,14 @@ const signUp = async (req: Request, res: Response): Promise<Response> => {
         });
 
     } catch (error) {
-        return res.status(404).json({
-            messages: error,
-            status: 404
+        return res.status(500).json({
+            message: "Server error",
+            error: error,
+            status: 500
         });
     }
-}
+};
+
 
 const login = async (req: Request, res: Response): Promise<Response> => {
     try {
@@ -60,7 +70,7 @@ const login = async (req: Request, res: Response): Promise<Response> => {
         if (!user) {
             return res.status(400).json({
                 message: "User not found",
-                status: 400,
+                status: 404,
             });
         };
 
@@ -68,7 +78,7 @@ const login = async (req: Request, res: Response): Promise<Response> => {
         if (!isPasswordCorrect) {
             return res.status(400).json({
                 message: "Invalid credentials",
-                status: 400,
+                status: 401,
             });
         };
 
@@ -130,7 +140,7 @@ const forgotPassword = async (req: Request, res: Response) => {
     } catch (error) {
         return res.status(404).json({
             messages: error,
-            status: 404
+            status: 500
         });
     }
 }
@@ -167,7 +177,7 @@ const verifyOtp = async (req: Request, res: Response) => {
     } catch (error) {
         return res.status(404).json({
             messages: error,
-            status: 404
+            status: 500
         });
     }
 }
