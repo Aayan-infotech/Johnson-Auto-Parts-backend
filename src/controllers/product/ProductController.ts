@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import Product from "../../models/ProductModel";
-
+import RatingAndReviews from "../../models/RatingAndReviews";
 import Category from "../../models/Category";
 import Subcategory from "../../models/Subcategory";
 
@@ -109,13 +109,15 @@ export const getProductById = async (req: Request, res: Response) => {
       const discountPercent = product.price?.discountPercent || 0;
   
       const discountedPrice = actualPrice - (actualPrice * discountPercent) / 100;
-  
+      
+      const reviews=await RatingAndReviews.find({productId:product}) 
+      console.log(reviews);
       res.status(200).json({ 
         success: true,
         message: "Product fetched successfully",
         product: {
           ...product,
-          discountedPrice: parseFloat(discountedPrice.toFixed(2)) 
+          discountedPrice: parseFloat(discountedPrice.toFixed(2)) ,reviews
         }
       });
   
