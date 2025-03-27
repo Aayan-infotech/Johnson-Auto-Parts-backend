@@ -41,6 +41,8 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
       product.price.actualPrice - (product.price.actualPrice * (product.price.discountPercent || 0)) / 100;
 
     if (req.user) {
+      console.log(req.user)
+
       // User is logged in, update their database cart
       let cart = await Cart.findOne({ user: req.user.userId });
       if (!cart) {
@@ -61,6 +63,7 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
       return res.status(200).json({ success: true, message: "Product added to cart", cart });
     } else {
       // Guest user, store in session
+      console.log(req.session.cart)
       if (!req.session.cart) {
         req.session.cart = { items: [], totalPrice: 0 };
       }
