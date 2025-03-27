@@ -3,7 +3,7 @@ import Cart from "../../models/CartModel";
 import Product from "../../models/ProductModel";
 import User from "../../models/User"; // Ensure this is imported
 import jwt from "jsonwebtoken"
-import getConfig from "../../config/loadConfig";
+import { extractUserFromToken } from "../../utills/authUtils";
 
 interface AuthRequest extends Request {
   user?: { userId: string; email: string };
@@ -21,22 +21,9 @@ declare module "express-session" {
 
 export const addToCart = async (req: AuthRequest, res: Response) => {
   try {
-    const config = await getConfig();
-    const token = req.headers.authorization?.split(" ")[1];
-    let userId: string | null = null;
-
-    if (token) {
-      try {
-        const decoded: any = jwt.verify(token, config.JWT_ACCESS_SECRET as string);
-        userId = decoded.userId;
-        
-        if (userId) {
-          req.user = { userId: userId as string, email: decoded.email };
-        }
-      } catch (error) {
-        console.warn("Invalid token, proceeding as guest.");
-      }
-    }
+    const user = await extractUserFromToken(req.headers.authorization);
+    // console.log(user)
+    req.user = user || undefined; // Assign user if exists
 
     const { productId, quantity } = req.body;
     const product = await Product.findById(productId);
@@ -49,15 +36,13 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
     }
 
     const discountedPrice =
-      product.price.actualPrice -
-      (product.price.actualPrice * (product.price.discountPercent || 0)) / 100;
+      product.price.actualPrice - (product.price.actualPrice * (product.price.discountPercent || 0)) / 100;
 
-    if (userId) {
-      console.log(userId,"adding as userId")
-
-      let cart = await Cart.findOne({ user: userId });
+    if (req.user) {
+      // User is logged in, update their database cart
+      let cart = await Cart.findOne({ user: req.user.userId });
       if (!cart) {
-        cart = new Cart({ user: userId, items: [], totalPrice: 0 });
+        cart = new Cart({ user: req.user.userId, items: [], totalPrice: 0 });
       }
 
       const existingItem = cart.items.find((item) => item.product.toString() === productId);
@@ -72,6 +57,7 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
 
       return res.status(200).json({ success: true, message: "Product added to cart", cart });
     } else {
+      // Guest user, store in session
       if (!req.session.cart) {
         req.session.cart = { items: [], totalPrice: 0 };
       }
@@ -85,7 +71,6 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
       }
 
       cart.totalPrice = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
-
       req.session.cart = cart;
       await req.session.save();
 
@@ -104,33 +89,32 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
   }
 };
 
-
 export const getCart = async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.userId;
-    if (!userId)
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+    const user = await extractUserFromToken(req.headers.authorization);
+    req.user = user || undefined;
 
-    const user = await User.findOne({ userId });
-    if (!user)
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+    if (req.user) {
+      const existingUser = await User.findOne({ userId: req.user.userId });
+      if (!existingUser) {
+        return res.status(404).json({ success: false, message: "User not found" });
+      }
 
-    const cart = await Cart.findOne({ user: user._id }).populate(
-      "items.product"
-    );
-    if (!cart) {
+      const cart = await Cart.findOne({ user: existingUser._id }).populate("items.product");
+
       return res.status(200).json({
         success: true,
-        message: "Cart is empty",
-        cart: { items: [], totalPrice: 0 },
+        message: cart ? "Cart fetched successfully" : "Cart is empty",
+        cart: cart || { items: [], totalPrice: 0 },
       });
-    }
+    } 
 
-    res
-      .status(200)
-      .json({ success: true, message: "Cart fetched successfully", cart });
+    return res.status(200).json({
+      success: true,
+      message: "Cart fetched successfully (Guest)",
+      cart: req.session.cart || { items: [], totalPrice: 0 },
+    });
+
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -143,48 +127,38 @@ export const getCart = async (req: AuthRequest, res: Response) => {
 export const updateCart = async (req: AuthRequest, res: Response) => {
   try {
     const { productId, quantity } = req.body;
-    const userId = req.user?.userId;
+    const user = await extractUserFromToken(req.headers.authorization);
+    req.user = user || undefined;
 
-    if (!userId)
+    if (!req.user) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
 
-    const user = await User.findOne({ userId });
-    if (!user)
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+    const existingUser = await User.findOne({ userId: req.user.userId });
+    if (!existingUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
 
-    const cart = await Cart.findOne({ user: user._id });
-    if (!cart)
-      return res
-        .status(404)
-        .json({ success: false, message: "Cart not found" });
+    const cart = await Cart.findOne({ user: existingUser._id });
+    if (!cart) {
+      return res.status(404).json({ success: false, message: "Cart not found" });
+    }
 
-    const item = cart.items.find(
-      (item) => item.product.toString() === productId
-    );
-    if (!item)
-      return res
-        .status(404)
-        .json({ success: false, message: "Product not in cart" });
+    const item = cart.items.find((item) => item.product.toString() === productId);
+    if (!item) {
+      return res.status(404).json({ success: false, message: "Product not in cart" });
+    }
 
     const product = await Product.findById(productId);
     if (!product || quantity > product.quantity) {
-      return res
-        .status(409)
-        .json({ success: false, message: "Insufficient stock available" });
+      return res.status(409).json({ success: false, message: "Insufficient stock available" });
     }
 
     item.quantity = quantity;
-    cart.totalPrice = cart.items.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0
-    );
+    cart.totalPrice = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
     await cart.save();
 
-    res
-      .status(200)
-      .json({ success: true, message: "Cart updated successfully", cart });
+    res.status(200).json({ success: true, message: "Cart updated successfully", cart });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -196,35 +170,38 @@ export const updateCart = async (req: AuthRequest, res: Response) => {
 
 export const removeFromCart = async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.userId;
+    const user = await extractUserFromToken(req.headers.authorization);
+    req.user = user || undefined; // Assign user if exists
+
     const { productId } = req.params;
-    if (!userId)
-      return res.status(401).json({ success: false, message: "Unauthorized" });
 
-    const user = await User.findOne({ userId });
-    if (!user)
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+    if (req.user) {
+      // User is logged in, remove from database cart
+      const cart = await Cart.findOne({ user: req.user.userId });
+      if (!cart)
+        return res.status(404).json({ success: false, message: "Cart not found" });
 
-    const cart = await Cart.findOne({ user: user._id });
-    if (!cart)
-      return res
-        .status(404)
-        .json({ success: false, message: "Cart not found" });
+      cart.items = cart.items.filter((item) => item.product.toString() !== productId);
+      cart.totalPrice = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
 
-    cart.items = cart.items.filter(
-      (item) => item.product.toString() !== productId
-    );
-    cart.totalPrice = cart.items.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0
-    );
+      await cart.save();
+      return res.status(200).json({ success: true, message: "Product removed from cart", cart });
+    } else {
+      // Guest user, remove from session cart
+      if (!req.session.cart) {
+        return res.status(404).json({ success: false, message: "Cart not found" });
+      }
 
-    await cart.save();
-    res
-      .status(200)
-      .json({ success: true, message: "Product removed from cart", cart });
+      req.session.cart.items = req.session.cart.items.filter((item) => item.productId !== productId);
+      req.session.cart.totalPrice = req.session.cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
+
+      await req.session.save();
+      return res.status(200).json({
+        success: true,
+        message: "Product removed from cart (Guest)",
+        cart: req.session.cart,
+      });
+    }
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -234,24 +211,30 @@ export const removeFromCart = async (req: AuthRequest, res: Response) => {
   }
 };
 
+
 export const clearCart = async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.userId;
+    const user = await extractUserFromToken(req.headers.authorization);
+    req.user = user || undefined;
 
-    if (!userId)
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+    if (req.user) {
+      // Logged-in user: Clear cart from the database
+      const existingUser = await User.findOne({ userId: req.user.userId });
+      if (!existingUser) {
+        return res.status(404).json({ success: false, message: "User not found" });
+      }
 
-    const user = await User.findOne({ userId });
-    if (!user)
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+      await Cart.findOneAndDelete({ user: existingUser._id });
 
-    await Cart.findOneAndDelete({ user: user._id });
+      return res.status(200).json({ success: true, message: "Cart cleared successfully" });
+    } 
 
-    res
-      .status(200)
-      .json({ success: true, message: "Cart cleared successfully" });
+    // Guest user: Clear cart from session
+    req.session.cart = { items: [], totalPrice: 0 };
+    await req.session.save();
+
+    return res.status(200).json({ success: true, message: "Cart cleared successfully (Guest)" });
+
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -260,3 +243,4 @@ export const clearCart = async (req: AuthRequest, res: Response) => {
     });
   }
 };
+
