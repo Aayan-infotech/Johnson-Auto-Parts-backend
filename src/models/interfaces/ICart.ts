@@ -7,7 +7,7 @@ export interface ICartItem {
 }
 
 export interface ICart {
-  user: string; 
+  user: Types.ObjectId; 
   items: ICartItem[];
   totalPrice: number;
   createdAt?: Date;

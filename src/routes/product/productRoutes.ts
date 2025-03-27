@@ -9,7 +9,7 @@ router.post('/create-product', createProduct);
 router.get('/getAllProducts', getAllProducts);
 router.get('/getProductById/:id', getProductById);
 router.get('/getProductBySubCategoryOrSubSubCategory/:id', getProductBySubCategoryOrSubSubCategory);
-router.put('/updateProduct/:productId', updateProduct);
-router.delete('/deleteProduct/:id', deleteProduct);
+router.put('/update-product/:productId', updateProduct);
+router.delete('/delete-product/:id', deleteProduct);
 
 export default router;
