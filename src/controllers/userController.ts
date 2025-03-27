@@ -100,9 +100,14 @@ const login = async (req: Request, res: Response): Promise<Response> => {
         status: 200,
       });
     } catch (error) {
-        console.log(error)
-      return res.status(500).json({ message: "Internal Server Error", error});
-    }
+        console.error("Login Error:", error);
+      
+        return res.status(500).json({ 
+          message: "Internal Server Error", 
+          error: error instanceof Error ? error.message : String(error) 
+        });
+      }
+      
   };
   
 
@@ -129,7 +134,7 @@ const forgotPassword = async (req: Request, res: Response) => {
         });
 
     } catch (error) {
-        return res.status(404).json({
+        return res.status(500).json({
             messages: error,
             status: 500
         });
