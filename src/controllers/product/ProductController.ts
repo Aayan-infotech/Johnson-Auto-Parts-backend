@@ -23,26 +23,35 @@ export const createProduct = async (req: Request, res: Response) => {
     if (!categoryId || !name || !description || !price?.actualPrice || !brand) {
       return res.status(400).json({ message: "Missing required fields." });
     }
+    console.log(req.body)
 
     // Validate Category
     const categoryExists = await Category.findById(categoryId);
     if (!categoryExists) {
-      return res.status(400).json({ message: "Invalid categoryId. Category does not exist." });
+      return res
+        .status(400)
+        .json({ message: "Invalid categoryId. Category does not exist." });
     }
 
     // Validate Subcategory (if provided)
     if (subcategoryId) {
       const subcategoryExists = await Subcategory.findById(subcategoryId);
       if (!subcategoryExists) {
-        return res.status(400).json({ message: "Invalid subcategoryId. Subcategory does not exist." });
+        return res.status(400).json({
+          message: "Invalid subcategoryId. Subcategory does not exist.",
+        });
       }
     }
 
     // Validate Sub-subcategory (if provided)
     if (subsubcategoryId) {
-      const subsubcategoryExists = await SubSubcategory.findById(subsubcategoryId);
+      const subsubcategoryExists = await SubSubcategory.findById(
+        subsubcategoryId
+      );
       if (!subsubcategoryExists) {
-        return res.status(400).json({ message: "Invalid subsubcategoryId. Sub-subcategory does not exist." });
+        return res.status(400).json({
+          message: "Invalid subsubcategoryId. Sub-subcategory does not exist.",
+        });
       }
     }
 
@@ -53,8 +62,8 @@ export const createProduct = async (req: Request, res: Response) => {
 
     const product = new Product({
       Category: categoryId,
-      SubCategory: subcategoryId || "N/A",
-      SubSubcategory: subsubcategoryId || "N/A",
+      SubCategory: subcategoryId || null,
+      SubSubcategory: subsubcategoryId || null,
       name: { en: name, fr: nameFr },
       description: { en: description, fr: descriptionFr },
       price: {
@@ -68,27 +77,40 @@ export const createProduct = async (req: Request, res: Response) => {
     });
 
     await product.save();
-    res.status(201).json({ success: true, message: "Product created successfully", product });
+    res.status(201).json({
+      success: true,
+      message: "Product created successfully",
+      product,
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Error creating product", error: (error as Error).message });
+    res.status(500).json({
+      success: false,
+      message: "Error creating product",
+      error: (error as Error).message,
+    });
   }
 };
 
-
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
-    const products = await Product.find().lean();
+    const { lang } = req.query as { lang?: "en" | "fr" };
+    const products = await Product.find({ isActive: true })
+      .populate("Category")
+      .lean();
 
-    // Add discounted price calculation
     const updatedProducts = products.map((product) => {
-      const actualPrice = product.price?.actualPrice || 0;
-      const discountPercent = product.price?.discountPercent || 0;
-      const discountedPrice =
+      const actualPrice: number = product?.price?.actualPrice || 0;
+      const discountPercent: number = product?.price?.discountPercent || 0;
+      const discountedPrice: number =
         actualPrice - (actualPrice * discountPercent) / 100;
 
       return {
         ...product,
-        discountedPrice: parseFloat(discountedPrice.toFixed(2)), // Round to 2 decimal places
+        name: product?.name?.[lang ?? "en"] ?? product.name.en,
+        description:
+          product?.description?.[lang ?? "en"] ?? product.description.en,
+        brand: product?.brand?.[lang ?? "en"] ?? product.brand.en,
+        discountedPrice: parseFloat(discountedPrice.toFixed(2)),
       };
     });
 
@@ -108,7 +130,11 @@ export const getAllProducts = async (req: Request, res: Response) => {
 
 export const getProductById = async (req: Request, res: Response) => {
   try {
-    const product = await Product.findById(req.params.id).lean();
+    const { lang } = req.query as { lang?: "en" | "fr" };
+
+    const product = await Product.findById(req.params.id)
+      .populate("Category") // Populate Category
+      .lean();
 
     if (!product) {
       return res.status(404).json({
@@ -119,14 +145,21 @@ export const getProductById = async (req: Request, res: Response) => {
 
     const actualPrice = product.price?.actualPrice || 0;
     const discountPercent = product.price?.discountPercent || 0;
-
     const discountedPrice = actualPrice - (actualPrice * discountPercent) / 100;
+
+    // Handle Category population
+    const category =
+      typeof product.Category === "object" ? product.Category : null;
 
     res.status(200).json({
       success: true,
       message: "Product fetched successfully",
       product: {
         ...product,
+        name: product?.name?.[lang ?? "en"] ?? product.name.en,
+        description:
+          product?.description?.[lang ?? "en"] ?? product.description.en,
+        brand: product?.brand?.[lang ?? "en"] ?? product.brand.en,
         discountedPrice: parseFloat(discountedPrice.toFixed(2)),
       },
     });
@@ -138,12 +171,14 @@ export const getProductById = async (req: Request, res: Response) => {
     });
   }
 };
+
 export const getProductBySubCategoryOrSubSubCategory = async (
   req: Request,
   res: Response
 ) => {
   try {
-    const id = req.params.id;
+    const { id } = req.params;
+    const { lang } = req.query as { lang?: "en" | "fr" };
 
     const subsubcategoryExist = await SubSubcategory.findById(id);
     const subcategoryExist = await Subcategory.findById(id);
@@ -151,9 +186,13 @@ export const getProductBySubCategoryOrSubSubCategory = async (
     let productsData = [];
 
     if (subsubcategoryExist) {
-      productsData = await Product.find({ SubSubcategory: id }).lean();
+      productsData = await Product.find({ SubSubcategory: id })
+        .populate("Category")
+        .lean();
     } else if (subcategoryExist) {
-      productsData = await Product.find({ SubCategory: id }).lean();
+      productsData = await Product.find({ SubCategory: id })
+        .populate("Category")
+        .lean();
     } else {
       return res.status(404).json({
         success: false,
@@ -170,9 +209,15 @@ export const getProductBySubCategoryOrSubSubCategory = async (
 
       return {
         ...product,
-        discountedPrice: parseFloat(discountedPrice.toFixed(2)), // Ensure rounded to 2 decimal places
+        name: product?.name?.[lang ?? "en"] ?? product.name.en,
+        description:
+          product?.description?.[lang ?? "en"] ?? product.description.en,
+        brand: product?.brand?.[lang ?? "en"] ?? product.brand.en,
+
+        discountedPrice: parseFloat(discountedPrice.toFixed(2)),
       };
     });
+
     return res.status(200).json({
       success: true,
       message: `Products fetched successfully for ID ${id}`,
@@ -192,44 +237,94 @@ export const updateProduct = async (req: Request, res: Response) => {
     const { productId } = req.params;
     const {
       name,
-      price,
+      description,
+      price, 
       discount,
       quantity,
       categoryId,
       subcategoryId,
       subsubcategoryId,
+      brand,
+      picture,
+      isActive,
     } = req.body;
 
     const existingProduct = await Product.findById(productId);
     if (!existingProduct) {
-      return res.status(404).json({ message: "Product not found" });
+      return res.status(404).json({ success: false, message: "Product not found" });
     }
 
+    if (categoryId && !(await Category.findById(categoryId))) {
+      return res.status(400).json({ success: false, message: "Invalid categoryId. Category does not exist." });
+    }
+
+    if (subcategoryId && !(await Subcategory.findById(subcategoryId))) {
+      return res.status(400).json({ success: false, message: "Invalid subcategoryId. Subcategory does not exist." });
+    }
+
+    if (subsubcategoryId && !(await SubSubcategory.findById(subsubcategoryId))) {
+      return res.status(400).json({ success: false, message: "Invalid subsubcategoryId. Sub-subcategory does not exist." });
+    }
+
+    // Ensure multilingual support
+    let updatedName = { ...existingProduct.name };
+    let updatedDescription = { ...existingProduct.description };
+    let updatedBrand = { ...existingProduct.brand };
+
+    if (name) {
+      const nameFr = await translateText(name, "fr");
+      updatedName = { en: name, fr: nameFr };
+    }
+
+    if (description) {
+      const descriptionFr = await translateText(description, "fr");
+      updatedDescription = { en: description, fr: descriptionFr };
+    }
+
+    if (brand) {
+      const brandFr = await translateText(brand, "fr");
+      updatedBrand = { en: brand, fr: brandFr };
+    }
+
+    // Correctly extracting `actualPrice` and `discountPercent` from `price`
+    const updatedPrice = {
+      actualPrice: price?.actualPrice ?? existingProduct.price.actualPrice,
+      discountPercent: price?.discountPercent ?? existingProduct.price.discountPercent,
+    };
+
     const updateData = {
-      name: name ?? existingProduct.name,
-      price: {
-        actualPrice: price ?? existingProduct.price.actualPrice,
-        discountPercent: discount ?? existingProduct.price.discountPercent,
-      },
+      name: updatedName,
+      description: updatedDescription,
+      brand: updatedBrand,
+      price: updatedPrice, // Now correctly structured
       quantity: quantity ?? existingProduct.quantity,
       Category: categoryId ?? existingProduct.Category,
       SubCategory: subcategoryId ?? existingProduct.SubCategory,
       SubSubcategory: subsubcategoryId ?? existingProduct.SubSubcategory,
+      picture: picture ?? existingProduct.picture,
+      isActive: isActive ?? existingProduct.isActive,
     };
 
     const updatedProduct = await Product.findByIdAndUpdate(
       productId,
       { $set: updateData },
       { new: true, runValidators: true }
-    );
+    ).lean();
 
-    res
-      .status(200)
-      .json({ message: "Product updated successfully", updatedProduct });
+    res.status(200).json({
+      success: true,
+      message: "Product updated successfully",
+      updatedProduct,
+    });
   } catch (error) {
-    res.status(404).json({ message: "Error updating product", error });
+    res.status(500).json({
+      success: false,
+      message: "Error updating product",
+      error: (error as Error).message,
+    });
   }
 };
+
 
 export const deleteProduct = async (req: Request, res: Response) => {
   try {
