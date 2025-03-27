@@ -84,13 +84,6 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
       });
     }
 
-
-    cart.totalPrice = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
-    await cart.save();
-
-    res.status(200).json({ success: true, message: "Product added to cart", cart });
-
-
   } catch (error) {
     res.status(500).json({
       success: false,
