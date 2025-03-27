@@ -5,9 +5,11 @@ import User from "../models/User";
 import { generateOTP, sendEmail, generateResetToken } from '../utills/generateOtp';
 import asyncHandler from "express-async-handler";
 import { mergeCartOnLogin } from "../middleware/mergeCartOnLogin"; 
+import getConfig from "../config/loadConfig";
 import dotenv from "dotenv";
 dotenv.config();
 
+const config = getConfig();
 
 interface AuthRequest extends Request {
     user?: { userId: string; email: string };
@@ -66,24 +68,21 @@ const login = async (req: Request, res: Response): Promise<Response> => {
       if (!user) {
         return res.status(404).json({ message: "User not found", status: 404 });
       }
-  console.log(123);
   
       const isPasswordCorrect = await bcrypt.compare(password, user.password);
       if (!isPasswordCorrect) {
         return res.status(401).json({ message: "Invalid credentials", status: 401 });
       }
-      console.log(1234);
   
       const accessToken = jwt.sign(
         { userId: user._id.toString(), email: user.email },
-        process.env.JWT_ACCESS_SECRET as string,
+        config.JWT_ACCESS_SECRET as string,
         { expiresIn: "1h" }
       );
-      console.log(12345);
   
       const refreshToken = jwt.sign(
         { userId: user._id.toString(), email: user.email },
-        process.env.JWT_REFRESH_SECRET as string,
+        config.JWT_REFRESH_SECRET as string,
         { expiresIn: "30d" }
       );
   
