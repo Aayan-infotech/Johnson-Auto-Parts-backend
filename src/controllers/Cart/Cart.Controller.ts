@@ -9,6 +9,7 @@ interface AuthRequest extends Request {
   user?: { userId: string; email: string };
 }
 
+
 // Extend SessionData to include the cart
 declare module "express-session" {
   interface SessionData {
@@ -24,6 +25,7 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
     const user = await extractUserFromToken(req.headers.authorization);
     // console.log(user)
     req.user = user || undefined; // Assign user if exists
+
 
     const { productId, quantity } = req.body;
     const product = await Product.findById(productId);
@@ -51,6 +53,7 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
       } else {
         cart.items.push({ product: productId, quantity, price: discountedPrice });
       }
+
 
       cart.totalPrice = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
       await cart.save();
@@ -80,6 +83,14 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
         cart: req.session.cart,
       });
     }
+
+
+    cart.totalPrice = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
+    await cart.save();
+
+    res.status(200).json({ success: true, message: "Product added to cart", cart });
+
+
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -88,6 +99,7 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
     });
   }
 };
+
 
 export const getCart = async (req: AuthRequest, res: Response) => {
   try {

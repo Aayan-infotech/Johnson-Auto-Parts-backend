@@ -1,5 +1,8 @@
 import { Request, Response } from "express";
 import Product from "../../models/ProductModel";
+
+import RatingAndReviews from "../../models/RatingAndReviews";
+
 import Category from "../../models/Category";
 import Subcategory from "../../models/Subcategory";
 import SubSubcategory from "../../models/SubSubcategory";
@@ -129,6 +132,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
 };
 
 export const getProductById = async (req: Request, res: Response) => {
+
   try {
     const { lang } = req.query as { lang?: "en" | "fr" };
 

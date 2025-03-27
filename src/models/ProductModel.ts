@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
+
 import { IProduct } from "./interfaces/IProduct"; // Assuming you have an interface file
 
 const ProductSchema = new Schema<IProduct>(
