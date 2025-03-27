@@ -25,9 +25,9 @@ const signUp = async (req: Request, res: Response): Promise<Response> => {
 
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return res.status(400).json({
+            return res.status(402).json({
                 message: "User already exists",
-                status: 400
+                status: 402
             });
         }
 
