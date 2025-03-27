@@ -86,6 +86,7 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
         cart: req.session.cart,
       });
     }
+
   } catch (error) {
     res.status(500).json({
       success: false,
