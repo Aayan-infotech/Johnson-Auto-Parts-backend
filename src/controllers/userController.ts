@@ -99,7 +99,8 @@ const login = async (req: Request, res: Response): Promise<Response> => {
         status: 200,
       });
     } catch (error) {
-      return res.status(500).json({ message: "Internal Server Error", error: (error as Error).message });
+        console.log(error)
+      return res.status(500).json({ message: "Internal Server Error", error});
     }
   };
   
