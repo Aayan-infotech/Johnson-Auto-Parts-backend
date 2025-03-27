@@ -19,7 +19,7 @@ router.use("/api/subcategory", subcategoryRoutes);
 router.use("/api/subsubcategory", subsubcategoryRoutes);
 router.use("/api/product", productRoutes);
 router.use("/api/RatingAndReviews", RatingAndReviews);
-router.use("/api/cart", verifyAccessToken,cartRoutes);
+router.use("/api/cart",cartRoutes);
 
 
 export default router;

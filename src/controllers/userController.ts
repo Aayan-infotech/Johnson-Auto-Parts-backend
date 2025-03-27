@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import User from "../models/User";
 import { generateOTP, sendEmail, generateResetToken } from '../utills/generateOtp';
 import asyncHandler from "express-async-handler";
+import { mergeCartOnLogin } from "../middleware/mergeCartOnLogin"; 
 
 
 interface AuthRequest extends Request {
@@ -55,65 +56,53 @@ const signUp = async (req: Request, res: Response): Promise<Response> => {
     }
 };
 
-
 const login = async (req: Request, res: Response): Promise<Response> => {
     try {
-        const config = await getConfig();
-
-        const jwtAccess: any = config.JWT_ACCESS_SECRET;
-        const jwtRef: any = config.JWT_REFRESH_SECRET;
-
-        const { email, password } = req.body;
-
-        const user = await User.findOne({ email });
-
-        if (!user) {
-            return res.status(400).json({
-                message: "User not found",
-                status: 404,
-            });
-        };
-
-        const isPasswordCorrect = await bcrypt.compare(password, user.password);
-        if (!isPasswordCorrect) {
-            return res.status(400).json({
-                message: "Invalid credentials",
-                status: 401,
-            });
-        };
-
-        const accessToken = jwt.sign(
-            { userId: user.userId, email: user.email },
-            jwtAccess,
-            { expiresIn: '1h' }
-        );
-
-        const refreshToken = jwt.sign(
-            { userId: user.userId, email: user.email },
-            jwtRef,
-            { expiresIn: '30d' }
-        );
-
-        user.refreshToken = refreshToken;
-        await user.save();
-
-        return res.status(200).json({
-            message: "Login successful",
-            data: {
-                userId: user.userId,
-                accessToken,
-                refreshToken,
-            },
-            status: 200,
-        });
-
+      const { email, password } = req.body;
+  
+      const user = await User.findOne({ email }).lean() ;
+  
+      if (!user) {
+        return res.status(404).json({ message: "User not found", status: 404 });
+      }
+  
+      const isPasswordCorrect = await bcrypt.compare(password, user.password);
+      if (!isPasswordCorrect) {
+        return res.status(401).json({ message: "Invalid credentials", status: 401 });
+      }
+  
+      const accessToken = jwt.sign(
+        { userId: user._id.toString(), email: user.email },
+        process.env.JWT_ACCESS_SECRET as string,
+        { expiresIn: "1h" }
+      );
+  
+      const refreshToken = jwt.sign(
+        { userId: user._id.toString(), email: user.email },
+        process.env.JWT_REFRESH_SECRET as string,
+        { expiresIn: "30d" }
+      );
+  
+      await User.updateOne({ _id: user._id }, { refreshToken });
+  
+      (req as any).user = { userId: user._id.toString() };
+  
+      await mergeCartOnLogin(req, res, () => {});
+  
+      return res.status(200).json({
+        message: "Login successful",
+        data: {
+          userId: user._id.toString(),
+          accessToken,
+          refreshToken,
+        },
+        status: 200,
+      });
     } catch (error) {
-        return res.status(404).json({
-            messages: error,
-            status: 404
-        });
+      return res.status(500).json({ message: "Internal Server Error", error: (error as Error).message });
     }
-}
+  };
+  
 
 const forgotPassword = async (req: Request, res: Response) => {
     try {
