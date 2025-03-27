@@ -1,4 +1,3 @@
-import getConfig from "../config/loadConfig";
 import jwt from 'jsonwebtoken';
 import e, { Request, Response } from "express";
 import bcrypt from "bcryptjs";
@@ -6,6 +5,8 @@ import User from "../models/User";
 import { generateOTP, sendEmail, generateResetToken } from '../utills/generateOtp';
 import asyncHandler from "express-async-handler";
 import { mergeCartOnLogin } from "../middleware/mergeCartOnLogin"; 
+import dotenv from "dotenv";
+dotenv.config();
 
 
 interface AuthRequest extends Request {
