@@ -12,6 +12,7 @@ interface Config {
   JWT_REFRESH_SECRET: string;
   EMAIL_USER: string;
   EMAIL_PASS: string;
+  SESSION_SECRET:string
 }
 
 async function getConfig(): Promise<Config> {
@@ -34,6 +35,7 @@ async function getConfig(): Promise<Config> {
             JWT_REFRESH_SECRET: secrets.JWT_REFRESH_SECRET,
             EMAIL_USER: secrets.EMAIL_USER,
             EMAIL_PASS: secrets.EMAIL_PASS,
+            SESSION_SECRET:'john-session'
           };
         } catch (parseError) {
           console.error("JSON Parse Error:", parseError);
@@ -54,6 +56,7 @@ async function getConfig(): Promise<Config> {
     JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || "",
     EMAIL_USER: process.env.EMAIL_USER || "",
     EMAIL_PASS: process.env.EMAIL_PASS || "",
+    SESSION_SECRET:'john-session'
   };
 }
 
