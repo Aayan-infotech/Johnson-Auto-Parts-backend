@@ -23,7 +23,6 @@ declare module "express-session" {
 export const addToCart = async (req: AuthRequest, res: Response) => {
   try {
     const user = await extractUserFromToken(req.headers.authorization);
-    // console.log(user)
     req.user = user || undefined; // Assign user if exists
 
 
@@ -41,7 +40,6 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
       product.price.actualPrice - (product.price.actualPrice * (product.price.discountPercent || 0)) / 100;
 
     if (req.user) {
-      console.log(req.user)
 
       // User is logged in, update their database cart
       let cart = await Cart.findOne({ user: req.user.userId });
@@ -98,14 +96,11 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
 
 export const getCart = async (req: AuthRequest, res: Response) => {
   try {
-    console.log(req.headers.authorization)
     const user = await extractUserFromToken(req.headers.authorization);
     req.user = user || undefined;
-    console.log(user,"user")
 
     if (req.user) {
       const existingUser = await User.findById(new mongoose.Types.ObjectId(req.user.userId) );
-    console.log(existingUser,"exist user")
 
       if (!existingUser) {
         return res.status(404).json({ success: false, message: "User not found" });
