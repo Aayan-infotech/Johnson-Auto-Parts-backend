@@ -18,7 +18,12 @@ app.use(
       resave: false,
       saveUninitialized: true,
       store: MongoStore.create({ mongoUrl:"mongodb+srv://ujjwalsingh:ujjwal123@cluster0.qbl1z.mongodb.net/autoparts" }),
-      cookie: { maxAge: 1000 * 60 * 60 * 24 }, // 1 day expiry
+      cookie: {
+        maxAge: 1000 * 60 * 60 * 24, // 1 day
+        httpOnly: true,
+        secure: false, 
+        sameSite: "none",
+      },
     })
   );
 app.use(express.json());

@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import Cart from "../../models/CartModel";
 import Product from "../../models/ProductModel";
 import User from "../../models/User"; // Ensure this is imported
-import jwt from "jsonwebtoken"
+import mongoose from "mongoose";
 import { extractUserFromToken } from "../../utills/authUtils";
 
 interface AuthRequest extends Request {
@@ -98,11 +98,15 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
 
 export const getCart = async (req: AuthRequest, res: Response) => {
   try {
+    console.log(req.headers.authorization)
     const user = await extractUserFromToken(req.headers.authorization);
     req.user = user || undefined;
+    console.log(user,"user")
 
     if (req.user) {
-      const existingUser = await User.findOne({ userId: req.user.userId });
+      const existingUser = await User.findById(new mongoose.Types.ObjectId(req.user.userId) );
+    console.log(existingUser,"exist user")
+
       if (!existingUser) {
         return res.status(404).json({ success: false, message: "User not found" });
       }
