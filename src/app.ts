@@ -4,9 +4,11 @@ import connectDB from "./config/db";
 import routes from "./routes/index";
 import session from "express-session";
 import MongoStore from "connect-mongo";
-import dotenv from "dotenv"
+import getConfig from "./config/loadConfig";
+import dotenv from "dotenv";
 dotenv.config();
 
+const config = getConfig();
 connectDB();
 
 const app: Application = express();
@@ -15,7 +17,7 @@ app.use(
       secret: process.env.SESSION_SECRET||"john-secret",
       resave: false,
       saveUninitialized: true,
-      store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
+      store: MongoStore.create({ mongoUrl:"mongodb+srv://ujjwalsingh:ujjwal123@cluster0.qbl1z.mongodb.net/autoparts" }),
       cookie: { maxAge: 1000 * 60 * 60 * 24 }, // 1 day expiry
     })
   );
