@@ -62,7 +62,6 @@ const signUp = async (req: Request, res: Response): Promise<Response> => {
 const login = async (req: Request, res: Response): Promise<Response> => {
     try {
       const { email, password } = req.body;
-  
       const user = await User.findOne({ email }).lean() ;
   
       if (!user) {
