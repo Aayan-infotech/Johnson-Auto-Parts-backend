@@ -63,10 +63,11 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
       return res.status(200).json({ success: true, message: "Product added to cart", cart });
     } else {
       // Guest user, store in session
-      console.log(req.session.cart)
+      console.log(req.session,"req.session.cart-1")
       if (!req.session.cart) {
         req.session.cart = { items: [], totalPrice: 0 };
       }
+      console.log(req.session.cart,"req.session.cart-2")
 
       const cart = req.session.cart;
       const existingItem = cart.items.find((item) => item.productId === productId);
@@ -117,6 +118,11 @@ export const getCart = async (req: AuthRequest, res: Response) => {
       });
     } 
 
+    // 🔍 Debugging Logs for Session Cart
+    console.log("Session ID in getCart:", req.sessionID);
+    console.log("Session Data in getCart:", req.session);
+    console.log("Session Cart in getCart:", req.session.cart);
+
     return res.status(200).json({
       success: true,
       message: "Cart fetched successfully (Guest)",
@@ -131,6 +137,7 @@ export const getCart = async (req: AuthRequest, res: Response) => {
     });
   }
 };
+
 
 export const updateCart = async (req: AuthRequest, res: Response) => {
   try {

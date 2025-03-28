@@ -3,6 +3,7 @@ import cors from "cors";
 import connectDB from "./config/db";
 import routes from "./routes/index";
 import session from "express-session";
+import MongoStore from "connect-mongo";
 import dotenv from "dotenv"
 dotenv.config();
 
@@ -14,6 +15,7 @@ app.use(
       secret: process.env.SESSION_SECRET||"john-secret",
       resave: false,
       saveUninitialized: true,
+      store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
       cookie: { maxAge: 1000 * 60 * 60 * 24 }, // 1 day expiry
     })
   );
