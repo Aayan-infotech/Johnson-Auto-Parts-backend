@@ -26,6 +26,8 @@ app.use(
       },
     })
   );
+  app.set("trust proxy", 1);
+
 app.use(express.json());
 app.use(cors({
     origin: ['http://3.223.253.106:2564', 'http://localhost:5173', 'http://3.223.253.106:6542', 'http://localhost:3000'],
