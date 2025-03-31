@@ -242,7 +242,11 @@ const getAllUsers = asyncHandler(async (req: Request, res: Response) => {
   const skip = (page - 1) * limit;
 
   const totalUsers = await User.countDocuments();
-  const users = await User.find().skip(skip).limit(limit).lean();
+  const users = await User.find()
+    .select("-password")
+    .skip(skip)
+    .limit(limit)
+    .lean();
 
   if (users.length === 0) {
     res.status(404).json({
@@ -301,11 +305,87 @@ const blockUnblockUser = async (req: Request, res: Response) => {
   }
 };
 
+const updateUser = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId)
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+
+    const { fullName, mobile, isActive, oldPassword, newPassword } = req.body;
+
+    const updateFields: Partial<{
+      fullName: string;
+      password: string;
+      mobile: string;
+      isActive: boolean;
+    }> = {};
+
+    if (fullName) updateFields.fullName = fullName;
+    if (mobile) updateFields.mobile = mobile;
+    if (isActive !== undefined) updateFields.isActive = isActive;
+
+    if (oldPassword && newPassword) {
+      const user = await User.findById(userId).select("+password");
+      if (!user) {
+        return res
+          .status(404)
+          .json({ success: false, message: "User not found" });
+      }
+
+      // Check if old password is correct
+      const isMatch = await bcrypt.compare(oldPassword, user.password);
+      if (!isMatch) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Incorrect old password" });
+      }
+
+      // Hash the new password before updating
+      const salt = await bcrypt.genSalt(10);
+      updateFields.password = await bcrypt.hash(newPassword, salt);
+    }
+
+    if (Object.keys(updateFields).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid fields provided for update",
+      });
+    }
+
+    // Update user
+    const updatedUser = await User.findByIdAndUpdate(userId, updateFields, {
+      new: true,
+      runValidators: true,
+      select: "-password -refreshToken -otp -otpExpiry", // Exclude sensitive fields from response
+    });
+
+    if (!updatedUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating user",
+      error: error as string,
+    });
+  }
+};
+
 export {
   signUp,
   login,
   forgotPassword,
   verifyOtp,
+  updateUser,
   restPassword,
   getAllUsers,
   blockUnblockUser,
