@@ -58,7 +58,7 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
       cart.totalPrice = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
       await cart.save();
 
-      return res.status(200).json({ success: true, message: "Product added to cart", cart });
+      return res.status(200).json({ success: true, message: "Product added to cart" });
     } else {
       // Guest user, store in session
       if (!req.session.cart) {
@@ -80,7 +80,6 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
       return res.status(200).json({
         success: true,
         message: "Product added to cart (Guest)",
-        cart: req.session.cart,
       });
     }
 
@@ -115,11 +114,6 @@ export const getCart = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // 🔍 Debugging Logs for Session Cart
-    console.log("Session ID in getCart:", req.sessionID);
-    console.log("Session Data in getCart:", req.session);
-    console.log("Session Cart in getCart:", req.session.cart);
-
     return res.status(200).json({
       success: true,
       message: "Cart fetched successfully (Guest)",
@@ -142,7 +136,6 @@ export const updateCart = async (req: AuthRequest, res: Response) => {
     const user = await extractUserFromToken(req.headers.authorization);
     req.user = user || undefined;
 
-    // 🛒 User-Based Cart
     if (req.user) {
       const existingUser = await User.findOne({ userId: req.user.userId });
       if (!existingUser) {
@@ -172,10 +165,10 @@ export const updateCart = async (req: AuthRequest, res: Response) => {
     }
 
     // 🛒 Session-Based Cart (Guest User)
+    console.log(req.session,"in update cart")
     if (!req.session.cart) {
       return res.status(404).json({ success: false, message: "Cart not found (Guest)" });
     }
-
     const cart = req.session.cart;
     const item = cart.items.find((item) => item.productId.toString() === productId);
 
@@ -192,7 +185,7 @@ export const updateCart = async (req: AuthRequest, res: Response) => {
     cart.totalPrice = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
     req.session.cart = cart; // Update session cart
 
-    return res.status(200).json({ success: true, message: "Cart updated successfully (Guest)", cart });
+    return res.status(200).json({ success: true, message: "Cart updated successfully (Guest)" });
   } catch (error) {
     res.status(500).json({
       success: false,
