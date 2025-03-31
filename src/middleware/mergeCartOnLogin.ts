@@ -8,7 +8,7 @@ interface AuthRequest extends Request {
     user?: { userId: string };
     session: session.Session & Partial<session.SessionData> & {
         cart?: {
-            items: { productId: string; quantity: number; price: number }[];
+            items: { productId: string; quantity: number; price: number; name: object; picture: string[] }[];
             totalPrice: number;
         };
     };
@@ -42,6 +42,8 @@ export const mergeCartOnLogin = async (req: AuthRequest, res: Response, next: Ne
                     product: productId,
                     quantity: sessionItem.quantity,
                     price: sessionItem.price,
+                    name: sessionItem.name,
+                    picture: sessionItem.picture
                 });
             }
         });

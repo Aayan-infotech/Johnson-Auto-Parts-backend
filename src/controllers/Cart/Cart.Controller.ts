@@ -14,7 +14,7 @@ interface AuthRequest extends Request {
 declare module "express-session" {
   interface SessionData {
     cart?: {
-      items: { productId: string; quantity: number; price: number }[];
+      items: { productId: string; quantity: number; price: number; name: object; picture: string[] }[];
       totalPrice: number;
     };
   }
@@ -24,8 +24,6 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
   try {
     const user = await extractUserFromToken(req.headers.authorization);
     req.user = user || undefined; // Assign user if exists
-
-
     const { productId, quantity } = req.body;
     const product = await Product.findById(productId);
     if (!product) {
@@ -38,6 +36,8 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
 
     const discountedPrice =
       product.price.actualPrice - (product.price.actualPrice * (product.price.discountPercent || 0)) / 100;
+    const name = product.name;
+    const picture = product.picture;
 
     if (req.user) {
 
@@ -51,7 +51,7 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
       if (existingItem) {
         existingItem.quantity += quantity;
       } else {
-        cart.items.push({ product: productId, quantity, price: discountedPrice });
+        cart.items.push({ product: productId, quantity, price: discountedPrice, name: name, picture: picture });
       }
 
 
@@ -70,7 +70,7 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
       if (existingItem) {
         existingItem.quantity += quantity;
       } else {
-        cart.items.push({ productId, quantity, price: discountedPrice });
+        cart.items.push({ productId, quantity, price: discountedPrice, name: name, picture: picture });
       }
 
       cart.totalPrice = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
@@ -100,7 +100,7 @@ export const getCart = async (req: AuthRequest, res: Response) => {
     req.user = user || undefined;
 
     if (req.user) {
-      const existingUser = await User.findById(new mongoose.Types.ObjectId(req.user.userId) );
+      const existingUser = await User.findById(new mongoose.Types.ObjectId(req.user.userId));
 
       if (!existingUser) {
         return res.status(404).json({ success: false, message: "User not found" });
@@ -113,7 +113,7 @@ export const getCart = async (req: AuthRequest, res: Response) => {
         message: cart ? "Cart fetched successfully" : "Cart is empty",
         cart: cart || { items: [], totalPrice: 0 },
       });
-    } 
+    }
 
     // 🔍 Debugging Logs for Session Cart
     console.log("Session ID in getCart:", req.sessionID);
@@ -142,21 +142,43 @@ export const updateCart = async (req: AuthRequest, res: Response) => {
     const user = await extractUserFromToken(req.headers.authorization);
     req.user = user || undefined;
 
-    if (!req.user) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+    // 🛒 User-Based Cart
+    if (req.user) {
+      const existingUser = await User.findOne({ userId: req.user.userId });
+      if (!existingUser) {
+        return res.status(404).json({ success: false, message: "User not found" });
+      }
+
+      const cart = await Cart.findOne({ user: existingUser._id });
+      if (!cart) {
+        return res.status(404).json({ success: false, message: "Cart not found" });
+      }
+
+      const item = cart.items.find((item) => item.product.toString() === productId);
+      if (!item) {
+        return res.status(404).json({ success: false, message: "Product not in cart" });
+      }
+
+      const product = await Product.findById(productId);
+      if (!product || quantity > product.quantity) {
+        return res.status(409).json({ success: false, message: "Insufficient stock available" });
+      }
+
+      item.quantity = quantity;
+      cart.totalPrice = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
+      await cart.save();
+
+      return res.status(200).json({ success: true, message: "Cart updated successfully", cart });
     }
 
-    const existingUser = await User.findOne({ userId: req.user.userId });
-    if (!existingUser) {
-      return res.status(404).json({ success: false, message: "User not found" });
+    // 🛒 Session-Based Cart (Guest User)
+    if (!req.session.cart) {
+      return res.status(404).json({ success: false, message: "Cart not found (Guest)" });
     }
 
-    const cart = await Cart.findOne({ user: existingUser._id });
-    if (!cart) {
-      return res.status(404).json({ success: false, message: "Cart not found" });
-    }
+    const cart = req.session.cart;
+    const item = cart.items.find((item) => item.productId.toString() === productId);
 
-    const item = cart.items.find((item) => item.product.toString() === productId);
     if (!item) {
       return res.status(404).json({ success: false, message: "Product not in cart" });
     }
@@ -168,9 +190,9 @@ export const updateCart = async (req: AuthRequest, res: Response) => {
 
     item.quantity = quantity;
     cart.totalPrice = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
-    await cart.save();
+    req.session.cart = cart; // Update session cart
 
-    res.status(200).json({ success: true, message: "Cart updated successfully", cart });
+    return res.status(200).json({ success: true, message: "Cart updated successfully (Guest)", cart });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -239,7 +261,7 @@ export const clearCart = async (req: AuthRequest, res: Response) => {
       await Cart.findOneAndDelete({ user: existingUser._id });
 
       return res.status(200).json({ success: true, message: "Cart cleared successfully" });
-    } 
+    }
 
     // Guest user: Clear cart from session
     req.session.cart = { items: [], totalPrice: 0 };
