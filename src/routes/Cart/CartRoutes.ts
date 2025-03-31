@@ -7,7 +7,7 @@ const router = Router();
 router.post("/add-to-cart", addToCart);
 router.get("/get-user-cart", getCart);
 router.put("/update-user-cart", updateCart);
-router.put("/remove-cart-item/:productId", removeFromCart,);
+router.delete("/remove-cart-item/:productId", removeFromCart,);
 router.put("/clear-cart", clearCart,);
 
 export default router;
