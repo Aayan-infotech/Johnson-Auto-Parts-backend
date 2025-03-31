@@ -42,9 +42,9 @@ const AddSubcategory = async (req: Request, res: Response) => {
         });
     }
     catch (error) {
-        return res.status(500).json({
+        return res.status(404).json({
             success: false,
-            status: 500,
+            status: 404,
             message: "Internal server error!",
             error: error
         });
@@ -82,9 +82,9 @@ const getSubcategoryByCategory = async (req: Request, res: Response) => {
         });
     }
     catch (error) {
-        return res.status(500).json({
+        return res.status(404).json({
             success: false,
-            status: 500,
+            status: 404,
             message: "Internal server error!",
             error: error
         });
@@ -118,9 +118,9 @@ const deleteSubcategory = async (req: Request, res: Response) => {
         });
     }
     catch (error) {
-        return res.status(500).json({
+        return res.status(404).json({
             success: false,
-            sttaus: 500,
+            sttaus: 404,
             message: "Internal server error!",
             error: error,
         });
@@ -149,9 +149,9 @@ const getSubcategoryForAdmin = async (req: Request, res: Response) => {
         });
     }
     catch (error) {
-        return res.status(500).json({
+        return res.status(404).json({
             success: false,
-            sttaus: 500,
+            sttaus: 404,
             message: "Internal server error!",
             error: error,
         });
@@ -183,14 +183,16 @@ const activateDeactivateSubcategory = async(req: Request, res: Response) => {
         })
     }
     catch(error){
-        return res.status(500).json({
+        return res.status(404).json({
             success: false,
-            status: 500,
+            status: 404,
             message: "Internal server error!",
             error: error
         });
     }
-}
+};
+
+
 
 
 export {

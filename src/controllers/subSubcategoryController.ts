@@ -39,9 +39,9 @@ const insertsubSubcategory = async (req: Request, res: Response) => {
         })
 
     } catch (error) {
-        return res.status(500).json({
+        return res.status(404).json({
             messages: error,
-            status: 500
+            status: 404
         });
     }
 };
@@ -68,7 +68,7 @@ const getSubSubcategoryBySubcategoryId = async (req: Request, res: Response) => 
         data: translatedSubSubcategories
     });
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch categories" });
+      res.status(404).json({ error: "Failed to fetch categories" });
     }
   };
 
@@ -96,9 +96,9 @@ const getSubSubcategoryBySubcategoryId = async (req: Request, res: Response) => 
 //         });
 //     }
 //     catch(error){
-//         return res.status(500).json({
+//         return res.status(404).json({
 //             success: false,
-//             status: 500,
+//             status: 404,
 //             message: "Internal server error!",
 //             error: error
 //         });
@@ -127,9 +127,9 @@ const getAllSubSubcategories = async(req: Request, res: Response) => {
         });
     }
     catch(error){
-        return res.status(500).json({
+        return res.status(404).json({
             success: false,
-            status: 500,
+            status: 404,
             message: "Internal server error!",
             error: error
         });
@@ -160,9 +160,9 @@ const activeBlockSubSubcategory = async(req: Request, res: Response) => {
         });
     }
     catch(error){
-        return res.status(500).json({
+        return res.status(404).json({
             success: false,
-            status: 500,
+            status: 404,
             message: "Internal server error!",
             error: error
         });

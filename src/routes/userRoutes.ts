@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { signUp, login ,forgotPassword,verifyOtp,restPassword,getAllUsers, blockUnblockUser} from "../controllers/userController";
+import { signUp, login ,forgotPassword,verifyOtp,restPassword,getAllUsers, blockUnblockUser,getUserDetails,updateUser} from "../controllers/userController";
 import { verifyAccessToken ,refreshAccessToken} from "../middleware/authMiddleware";
 
 const router = Router();
@@ -11,8 +11,8 @@ router.post("/forgate",forgotPassword);
 router.post("/verifyOtp",verifyOtp);
 router.post("/resetPass",verifyAccessToken,restPassword);
 router.get("/getAllUsers", getAllUsers);
-
-// For admin
+router.get("/getUserDetails", verifyAccessToken,getUserDetails);
+router.put("/updateUser", verifyAccessToken,updateUser);
 router.put("/admin/blockUnblockUser/:userId", blockUnblockUser);
 
 

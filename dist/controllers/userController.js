@@ -40,9 +40,9 @@ const signUp = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         });
     }
     catch (error) {
-        return res.status(500).json({
+        return res.status(404).json({
             messages: error,
-            status: 500
+            status: 404
         });
     }
 });
@@ -83,9 +83,9 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         });
     }
     catch (error) {
-        return res.status(500).json({
+        return res.status(404).json({
             messages: error,
-            status: 500
+            status: 404
         });
     }
 });
@@ -110,9 +110,9 @@ const forgotPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
         });
     }
     catch (error) {
-        return res.status(500).json({
+        return res.status(404).json({
             messages: error,
-            status: 500
+            status: 404
         });
     }
 });
@@ -144,9 +144,9 @@ const verifyOtp = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         });
     }
     catch (error) {
-        return res.status(500).json({
+        return res.status(404).json({
             messages: error,
-            status: 500
+            status: 404
         });
     }
 });
@@ -170,9 +170,9 @@ const restPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         });
     }
     catch (error) {
-        return res.status(500).json({
+        return res.status(404).json({
             messages: error,
-            status: 500
+            status: 404
         });
     }
 });
