@@ -17,6 +17,20 @@ const OrderSchema = new Schema<IOrder>(
       enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
       default: "pending",
     },
+    address: {
+      fullName: { type: String, required: true },
+      street: { type: String, required: true },
+      city: { type: String, required: true },
+      state: { type: String, required: true },
+      postalCode: { type: String, required: true },
+      country: { type: String, required: true },
+      phoneNumber: { type: String, required: true },
+    },
+    payment: {
+      method: { type: String, enum: ["credit_card", "paypal", "crypto", "bank_transfer"], required: true },
+      status: { type: String, enum: ["pending", "paid", "failed", "refunded"], default: "pending" },
+      transactionId: { type: String, default: null }, // ID from payment provider (Stripe, PayPal, etc.)
+    },
   },
   { timestamps: true }
 );
