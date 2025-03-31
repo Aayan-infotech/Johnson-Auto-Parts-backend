@@ -215,7 +215,8 @@ const restPassword = async (req: AuthRequest, res: Response) => {
 const getUserDetails = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
-    const userExists = await User.findById(userId);
+    const userExists = await User.findById(userId).select("-password");
+
     if (!userExists) {
       return res.status(404).json({
         success: false,
@@ -225,7 +226,7 @@ const getUserDetails = async (req: AuthRequest, res: Response) => {
     return res.status(200).json({
       success: true,
       message: "user Details fetched Succesfully.",
-      user:userExists,
+      user: userExists,
     });
   } catch (error) {
     return res.status(500).json({
