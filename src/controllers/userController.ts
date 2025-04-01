@@ -11,6 +11,7 @@ import asyncHandler from "express-async-handler";
 import { mergeCartOnLogin } from "../middleware/mergeCartOnLogin";
 import getConfig from "../config/loadConfig";
 import dotenv from "dotenv";
+import { mergeWishlistOnLogin } from "../middleware/mergeWishListOnLogin";
 dotenv.config();
 
 const config = getConfig();
@@ -67,7 +68,7 @@ const signUp = async (req: Request, res: Response): Promise<Response> => {
 const login = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email }).lean();
+    const user = await User.findOne({ email }).select('+password').lean();
 
     if (!user) {
       return res.status(404).json({ message: "User not found", status: 404 });
@@ -75,9 +76,7 @@ const login = async (req: Request, res: Response): Promise<Response> => {
 
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) {
-      return res
-        .status(401)
-        .json({ message: "Invalid credentials", status: 401 });
+      return res.status(401).json({ message: "Invalid credentials", status: 401 });
     }
 
     const accessToken = jwt.sign(
@@ -94,10 +93,22 @@ const login = async (req: Request, res: Response): Promise<Response> => {
 
     await User.updateOne({ _id: user._id }, { refreshToken });
 
-    (req as any).user = { userId: user._id.toString() };
+    (req as any).user = { userId: user._id.toString(), email: user.email };
 
-    await mergeCartOnLogin(req, res, () => {});
+    // Modify merge functions to not send responses, but just return a result or log errors
+    try {
+      await mergeCartOnLogin(req, res,()=>{});
+    } catch (cartError) {
+      console.error("Cart merge error:", cartError);
+    }
 
+    try {
+      await mergeWishlistOnLogin(req, res,()=>{});
+    } catch (wishlistError) {
+      console.error("Wishlist merge error:", wishlistError);
+    }
+
+    // Send the final response only after merging
     return res.status(200).json({
       message: "Login successful",
       data: {
@@ -107,15 +118,17 @@ const login = async (req: Request, res: Response): Promise<Response> => {
       },
       status: 200,
     });
+
   } catch (error) {
     console.error("Login Error:", error);
-
     return res.status(500).json({
       message: "Internal Server Error",
       error: error instanceof Error ? error.message : String(error),
+      status: 500,
     });
   }
 };
+
 
 const forgotPassword = async (req: Request, res: Response) => {
   try {
