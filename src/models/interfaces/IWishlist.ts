@@ -2,8 +2,8 @@
 import mongoose, { Document } from "mongoose";
 
 export interface IWishlist extends Document {
-  user: mongoose.Schema.Types.ObjectId; // user reference as ObjectId
+  user: mongoose.Types.ObjectId;  // Changed from Schema.Types
   items: {
-    product: mongoose.Schema.Types.ObjectId; // product reference as ObjectId
+    product: mongoose.Types.ObjectId;  // Changed from Schema.Types
   }[];
 }
