@@ -35,6 +35,6 @@ export const getS3Client = async (): Promise<S3> => {
   const credentials = await getAwsCredentials();
   return new S3({
     credentials,
-    region: process.env.AWS_REGION as string,
+    region: "us-east-1",
   });
 };
