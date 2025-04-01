@@ -318,14 +318,14 @@ const updateUser = async (req: AuthRequest, res: Response) => {
     const { fullName, mobile, isActive, oldPassword, newPassword } = req.body;
 
     const updateFields: Partial<{
-      fullName: string;
+      name: string;
       password: string;
       mobile: string;
       isActive: boolean;
       profilePicture:string;
     }> = {};
 
-    if (fullName) updateFields.fullName = fullName;
+    if (fullName) updateFields.name = fullName;
     if (mobile) updateFields.mobile = mobile;
     if (isActive !== undefined) updateFields.isActive = isActive;
     if (image) updateFields.profilePicture = image[0];
