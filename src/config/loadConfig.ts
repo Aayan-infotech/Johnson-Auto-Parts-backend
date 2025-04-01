@@ -13,6 +13,8 @@ interface Config {
   EMAIL_USER: string;
   EMAIL_PASS: string;
   SESSION_SECRET:string
+  BUCKET_NAME:string;
+  AWS_REGION:string
 }
 
 async function getConfig(): Promise<Config> {
@@ -35,7 +37,9 @@ async function getConfig(): Promise<Config> {
             JWT_REFRESH_SECRET: secrets.JWT_REFRESH_SECRET,
             EMAIL_USER: secrets.EMAIL_USER,
             EMAIL_PASS: secrets.EMAIL_PASS,
-            SESSION_SECRET:'john-session'
+            SESSION_SECRET:'john-session',
+            BUCKET_NAME:"johnson-kbo60b7v",
+            AWS_REGION:"us-east-1"
           };
         } catch (parseError) {
           console.error("JSON Parse Error:", parseError);
@@ -56,7 +60,9 @@ async function getConfig(): Promise<Config> {
     JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || "",
     EMAIL_USER: process.env.EMAIL_USER || "",
     EMAIL_PASS: process.env.EMAIL_PASS || "",
-    SESSION_SECRET:'john-session'
+    SESSION_SECRET:'john-session',
+    BUCKET_NAME:process.env.BUCKET_NAME||"",
+    AWS_REGION:process.env.AWS_REGION||""
   };
 }
 

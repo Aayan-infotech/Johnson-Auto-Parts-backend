@@ -8,6 +8,7 @@ export interface IUser extends Document {
   password: string;
   isActive: boolean;
   refreshToken: string;
+  profilePicture:string;
   otp?: string;
   otpExpiry?: Date;
 }

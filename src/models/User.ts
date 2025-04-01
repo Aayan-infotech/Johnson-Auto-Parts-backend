@@ -19,6 +19,7 @@ const UserSchema = new Schema<IUser>(
       match: [/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/, 'Please fill a valid email address'],
     },
     mobile: { type: String, required: true },
+    profilePicture: { type: String},
     password: { type: String, required: true },
     isActive: { type : Boolean, default: false },
     refreshToken:{type:String},

@@ -7,8 +7,12 @@ import Category from "../../models/Category";
 import Subcategory from "../../models/Subcategory";
 import SubSubcategory from "../../models/SubSubcategory";
 import { translateText } from "../../utills/translateService";
+interface AuthRequest extends Request {
+  user?: { userId: string; email: string };
+  fileLocations?: string[]; // Adjust the type as needed
+}
 
-export const createProduct = async (req: Request, res: Response) => {
+export const createProduct = async (req: AuthRequest, res: Response) => {
   try {
     const {
       categoryId,
@@ -22,7 +26,7 @@ export const createProduct = async (req: Request, res: Response) => {
       quantity,
       isActive,
     } = req.body;
-
+      const productImage=req.fileLocations;
     if (!categoryId || !name || !description || !price?.actualPrice || !brand) {
       return res.status(400).json({ message: "Missing required fields." });
     }
@@ -74,7 +78,7 @@ export const createProduct = async (req: Request, res: Response) => {
         discountPercent: price.discountPercent ?? 0,
       },
       brand: { en: brand, fr: brandFr },
-      picture,
+      picture:productImage,
       quantity: quantity ?? 0,
       isActive: isActive ?? true,
     });
@@ -236,7 +240,7 @@ export const getProductBySubCategoryOrSubSubCategory = async (
   }
 };
 
-export const updateProduct = async (req: Request, res: Response) => {
+export const updateProduct = async (req: AuthRequest, res: Response) => {
   try {
     const { productId } = req.params;
     const {
@@ -252,7 +256,7 @@ export const updateProduct = async (req: Request, res: Response) => {
       picture,
       isActive,
     } = req.body;
-
+      const productImages=req.fileLocations;
     const existingProduct = await Product.findById(productId);
     if (!existingProduct) {
       return res.status(404).json({ success: false, message: "Product not found" });
@@ -305,7 +309,7 @@ export const updateProduct = async (req: Request, res: Response) => {
       Category: categoryId ?? existingProduct.Category,
       SubCategory: subcategoryId ?? existingProduct.SubCategory,
       SubSubcategory: subsubcategoryId ?? existingProduct.SubSubcategory,
-      picture: picture ?? existingProduct.picture,
+      picture: productImages ?? existingProduct.picture,
       isActive: isActive ?? existingProduct.isActive,
     };
 

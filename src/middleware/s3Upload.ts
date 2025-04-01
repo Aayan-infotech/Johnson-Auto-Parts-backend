@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { getS3Client } from '../config/awsConfig';
 import { upload } from './multerUpload';
+import getConfig from "../config/loadConfig";
+const config = getConfig();
 
-// Extend Request to include file locations
 interface MulterRequest extends Request {
   fileLocations?: string[];
 }
@@ -23,14 +24,14 @@ export const uploadToS3 = async (req: MulterRequest, res: Response, next: NextFu
 
       for (const file of req.files as Express.Multer.File[]) {
         const params = {
-          Bucket: process.env.AWS_S3_BUCKET_NAME as string,
+          Bucket: (await config).BUCKET_NAME as string,
           Key: `${Date.now()}-${file.originalname}`,
           Body: file.buffer,
           ContentType: file.mimetype,
         };
 
         await s3.putObject(params);
-        const fileUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${params.Key}`;
+        const fileUrl = `https://${(await config).BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${params.Key}`;
         fileLocations.push(fileUrl);
       }
 

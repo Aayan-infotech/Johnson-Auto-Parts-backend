@@ -17,7 +17,9 @@ const config = getConfig();
 
 interface AuthRequest extends Request {
   user?: { userId: string; email: string };
+  fileLocations?: string[]; // Adjust the type as needed
 }
+
 
 const signUp = async (req: Request, res: Response): Promise<Response> => {
   try {
@@ -308,6 +310,8 @@ const blockUnblockUser = async (req: Request, res: Response) => {
 const updateUser = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
+    const image=req.fileLocations
+    console.log(image);
     if (!userId)
       return res.status(401).json({ success: false, message: "Unauthorized" });
 
@@ -318,11 +322,13 @@ const updateUser = async (req: AuthRequest, res: Response) => {
       password: string;
       mobile: string;
       isActive: boolean;
+      profilePicture:string;
     }> = {};
 
     if (fullName) updateFields.fullName = fullName;
     if (mobile) updateFields.mobile = mobile;
     if (isActive !== undefined) updateFields.isActive = isActive;
+    if (image) updateFields.profilePicture = image[0];
 
     if (oldPassword && newPassword) {
       const user = await User.findById(userId).select("+password");
