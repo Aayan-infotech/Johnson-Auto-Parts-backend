@@ -31,7 +31,7 @@ export const uploadToS3 = async (req: MulterRequest, res: Response, next: NextFu
         };
 
         await s3.putObject(params);
-        const fileUrl = `https://${(await config).BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${params.Key}`;
+        const fileUrl = `https://${(await config).BUCKET_NAME}.s3.${(await config).AWS_REGION}.amazonaws.com/${params.Key}`;
         fileLocations.push(fileUrl);
       }
 

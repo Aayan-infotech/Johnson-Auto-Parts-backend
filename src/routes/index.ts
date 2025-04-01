@@ -8,6 +8,7 @@ import productRoutes from "./product/productRoutes";
 import RatingAndReviews from "./RatingAndReviews/RatingAndReviews";
 import cartRoutes from "./Cart/CartRoutes";
 import orderRoutes from "./Order&Payment/OrderRoutes";
+import wishListRoutes from "./wishlist/Wishlist";
 
 
 const router = express.Router();
@@ -21,6 +22,7 @@ router.use("/api/product", productRoutes);
 router.use("/api/RatingAndReviews", RatingAndReviews);
 router.use("/api/orders", orderRoutes);
 router.use("/api/cart",cartRoutes);
+router.use("/api/wishlist",wishListRoutes);
 
 
 
