@@ -1,11 +1,13 @@
 import { S3 } from '@aws-sdk/client-s3';
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import dotenv from 'dotenv';
+import getConfig from "../config/loadConfig";
+const config = getConfig();
 
 dotenv.config();
 
 const secretsManagerClient = new SecretsManagerClient({
-  region: process.env.AWS_REGION as string,
+  region: "us-east-1",
 });
 
 // Fetch AWS credentials from Secrets Manager
@@ -24,6 +26,7 @@ export const getAwsCredentials = async (): Promise<{ accessKeyId: string; secret
 
     throw new Error('Failed to retrieve AWS credentials');
   } catch (error) {
+    console.log(error)
     throw new Error('Error fetching AWS credentials from Secrets Manager');
   }
 };
