@@ -1,11 +1,21 @@
-import { Router} from "express";
-import {createOrder}from "../../controllers/order/OrderController";
+import { Router } from "express";
+import {
+    createOrder,
+    getOrders,
+    getOrderByUserId,
+    changeOrderStatus
+} from "../../controllers/order/OrderController";
 
-import {verifyAccessToken} from "../../middleware/authMiddleware";
+import { verifyAccessToken } from "../../middleware/authMiddleware";
 
 const router = Router();
 
 router.post("/create-order", createOrder);
+router.get("/user/get-orders/:userId", getOrderByUserId);
+
+// admin
+router.get("/admin/get-orders", getOrders);
+router.patch("/admin/change-order/:orderId", changeOrderStatus);
 
 
 export default router;
