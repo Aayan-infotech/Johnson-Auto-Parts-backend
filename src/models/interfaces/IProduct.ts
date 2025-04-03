@@ -15,7 +15,15 @@ export interface IProduct extends Document {
   partNo: string;
   brand: { en: string; fr?: string };
   picture: string[];
-
+  quality:string;
   quantity: number;
   isActive: boolean;
+  autoPartType:string;    /* brake, clutch, brake, shoe etc*/
+  compatibleVehicles: {
+    year: number[];
+    make: string[];
+    model: string[];
+  };
+  ratingAndReview:Types.ObjectId|null
+  salesCount: number;
 }

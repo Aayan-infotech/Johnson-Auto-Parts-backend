@@ -1,8 +1,5 @@
 import { Request, Response } from "express";
-import Product from "../../models/ProductModel";
-
-import RatingAndReviews from "../../models/RatingAndReviews";
-
+import Product from "../../models/ProductModel"
 import Category from "../../models/Category";
 import Subcategory from "../../models/Subcategory";
 import SubSubcategory from "../../models/SubSubcategory";
@@ -22,25 +19,26 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
       description,
       price,
       brand,
-      picture,
       quantity,
       isActive,
+      compatibleVehicles, 
     } = req.body;
-      const productImage=req.fileLocations;
-    if (!categoryId || !name || !description || !price?.actualPrice || !brand) {
+    
+    const productImage = req.fileLocations;
+
+    if (!name || !description || !price?.actualPrice || !brand) {
       return res.status(400).json({ message: "Missing required fields." });
     }
-    console.log(req.body)
 
-    // Validate Category
-    const categoryExists = await Category.findById(categoryId);
-    if (!categoryExists) {
-      return res
-        .status(400)
-        .json({ message: "Invalid categoryId. Category does not exist." });
+    if (categoryId) {
+      const categoryExists = await Category.findById(categoryId);
+      if (!categoryExists) {
+        return res.status(400).json({
+          message: "Invalid categoryId. Category does not exist.",
+        });
+      }
     }
 
-    // Validate Subcategory (if provided)
     if (subcategoryId) {
       const subcategoryExists = await Subcategory.findById(subcategoryId);
       if (!subcategoryExists) {
@@ -50,11 +48,8 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
       }
     }
 
-    // Validate Sub-subcategory (if provided)
     if (subsubcategoryId) {
-      const subsubcategoryExists = await SubSubcategory.findById(
-        subsubcategoryId
-      );
+      const subsubcategoryExists = await SubSubcategory.findById(subsubcategoryId);
       if (!subsubcategoryExists) {
         return res.status(400).json({
           message: "Invalid subsubcategoryId. Sub-subcategory does not exist.",
@@ -62,7 +57,6 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
       }
     }
 
-    // Translate to French
     const nameFr = await translateText(name, "fr");
     const descriptionFr = await translateText(description, "fr");
     const brandFr = await translateText(brand, "fr");
@@ -78,9 +72,15 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
         discountPercent: price.discountPercent ?? 0,
       },
       brand: { en: brand, fr: brandFr },
-      picture:productImage,
+      picture: productImage,
       quantity: quantity ?? 0,
       isActive: isActive ?? true,
+      compatibleVehicles: {
+        year: compatibleVehicles?.year || [],
+        make: compatibleVehicles?.make || [],
+        model: compatibleVehicles?.model || [],
+      },
+      salesCount: 0,
     });
 
     await product.save();
@@ -97,6 +97,7 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
     });
   }
 };
+
 
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
@@ -246,17 +247,18 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
     const {
       name,
       description,
-      price, 
-      discount,
+      price,
       quantity,
       categoryId,
       subcategoryId,
       subsubcategoryId,
       brand,
-      picture,
       isActive,
+      compatibleVehicles, 
     } = req.body;
-      const productImages=req.fileLocations;
+    
+    const productImages = req.fileLocations;
+
     const existingProduct = await Product.findById(productId);
     if (!existingProduct) {
       return res.status(404).json({ success: false, message: "Product not found" });
@@ -274,7 +276,6 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ success: false, message: "Invalid subsubcategoryId. Sub-subcategory does not exist." });
     }
 
-    // Ensure multilingual support
     let updatedName = { ...existingProduct.name };
     let updatedDescription = { ...existingProduct.description };
     let updatedBrand = { ...existingProduct.brand };
@@ -294,23 +295,31 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
       updatedBrand = { en: brand, fr: brandFr };
     }
 
-    // Correctly extracting `actualPrice` and `discountPercent` from `price`
     const updatedPrice = {
       actualPrice: price?.actualPrice ?? existingProduct.price.actualPrice,
       discountPercent: price?.discountPercent ?? existingProduct.price.discountPercent,
     };
 
+    const updatedCompatibleVehicles = compatibleVehicles
+      ? {
+          year: compatibleVehicles.year || existingProduct.compatibleVehicles.year,
+          make: compatibleVehicles.make || existingProduct.compatibleVehicles.make,
+          model: compatibleVehicles.model || existingProduct.compatibleVehicles.model,
+        }
+      : existingProduct.compatibleVehicles;
+
     const updateData = {
       name: updatedName,
       description: updatedDescription,
       brand: updatedBrand,
-      price: updatedPrice, // Now correctly structured
+      price: updatedPrice,
       quantity: quantity ?? existingProduct.quantity,
       Category: categoryId ?? existingProduct.Category,
       SubCategory: subcategoryId ?? existingProduct.SubCategory,
       SubSubcategory: subsubcategoryId ?? existingProduct.SubSubcategory,
       picture: productImages ?? existingProduct.picture,
       isActive: isActive ?? existingProduct.isActive,
+      compatibleVehicles: updatedCompatibleVehicles, 
     };
 
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -332,7 +341,6 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
     });
   }
 };
-
 
 export const deleteProduct = async (req: Request, res: Response) => {
   try {
