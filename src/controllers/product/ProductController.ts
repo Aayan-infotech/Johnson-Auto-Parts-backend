@@ -18,52 +18,49 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
       name,
       description,
       price,
+      partNo,
       brand,
       quantity,
       isActive,
-      compatibleVehicles, 
+      autoPartType,
+      compatibleVehicles,
     } = req.body;
-    
-    const productImage = req.fileLocations;
 
-    if (!name || !description || !price?.actualPrice || !brand) {
-      return res.status(400).json({ message: "Missing required fields." });
+    const productImages = req.fileLocations || [];
+
+    if (!name || !description || !price?.actualPrice || !brand ) {
+      return res.status(400).json({ success: false, message: "Missing required fields." });
     }
 
     if (categoryId) {
       const categoryExists = await Category.findById(categoryId);
       if (!categoryExists) {
-        return res.status(400).json({
-          message: "Invalid categoryId. Category does not exist.",
-        });
+        return res.status(400).json({ success: false, message: "Invalid categoryId. Category does not exist." });
       }
     }
 
     if (subcategoryId) {
       const subcategoryExists = await Subcategory.findById(subcategoryId);
       if (!subcategoryExists) {
-        return res.status(400).json({
-          message: "Invalid subcategoryId. Subcategory does not exist.",
-        });
+        return res.status(400).json({ success: false, message: "Invalid subcategoryId. Subcategory does not exist." });
       }
     }
 
     if (subsubcategoryId) {
       const subsubcategoryExists = await SubSubcategory.findById(subsubcategoryId);
       if (!subsubcategoryExists) {
-        return res.status(400).json({
-          message: "Invalid subsubcategoryId. Sub-subcategory does not exist.",
-        });
+        return res.status(400).json({ success: false, message: "Invalid subsubcategoryId. Sub-subcategory does not exist." });
       }
     }
 
+    // Translate text fields to French
     const nameFr = await translateText(name, "fr");
     const descriptionFr = await translateText(description, "fr");
     const brandFr = await translateText(brand, "fr");
 
     const product = new Product({
-      Category: categoryId,
-      SubCategory: subcategoryId || null,
+      Category: categoryId ||null,
+      SubCategory: subcategoryId ||null,
       SubSubcategory: subsubcategoryId || null,
       name: { en: name, fr: nameFr },
       description: { en: description, fr: descriptionFr },
@@ -71,10 +68,12 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
         actualPrice: price.actualPrice,
         discountPercent: price.discountPercent ?? 0,
       },
+      partNo: partNo || null,
       brand: { en: brand, fr: brandFr },
-      picture: productImage,
+      picture: productImages,
       quantity: quantity ?? 0,
       isActive: isActive ?? true,
+      autoPartType: autoPartType || "",
       compatibleVehicles: {
         year: compatibleVehicles?.year || [],
         make: compatibleVehicles?.make || [],
@@ -84,13 +83,14 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
     });
 
     await product.save();
-    res.status(201).json({
+
+    return res.status(201).json({
       success: true,
       message: "Product created successfully",
       product,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Error creating product",
       error: (error as Error).message,
@@ -254,16 +254,20 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
       subsubcategoryId,
       brand,
       isActive,
-      compatibleVehicles, 
+      autoPartType,
+      compatibleVehicles,
+      partNo,
     } = req.body;
-    
+
     const productImages = req.fileLocations;
 
+    // Find the existing product
     const existingProduct = await Product.findById(productId);
     if (!existingProduct) {
       return res.status(404).json({ success: false, message: "Product not found" });
     }
 
+    // Validate category existence
     if (categoryId && !(await Category.findById(categoryId))) {
       return res.status(400).json({ success: false, message: "Invalid categoryId. Category does not exist." });
     }
@@ -276,24 +280,12 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ success: false, message: "Invalid subsubcategoryId. Sub-subcategory does not exist." });
     }
 
-    let updatedName = { ...existingProduct.name };
-    let updatedDescription = { ...existingProduct.description };
-    let updatedBrand = { ...existingProduct.brand };
-
-    if (name) {
-      const nameFr = await translateText(name, "fr");
-      updatedName = { en: name, fr: nameFr };
-    }
-
-    if (description) {
-      const descriptionFr = await translateText(description, "fr");
-      updatedDescription = { en: description, fr: descriptionFr };
-    }
-
-    if (brand) {
-      const brandFr = await translateText(brand, "fr");
-      updatedBrand = { en: brand, fr: brandFr };
-    }
+    // Handle translation if new values are provided
+    const updatedName = name ? { en: name, fr: await translateText(name, "fr") } : existingProduct.name;
+    const updatedDescription = description
+      ? { en: description, fr: await translateText(description, "fr") }
+      : existingProduct.description;
+    const updatedBrand = brand ? { en: brand, fr: await translateText(brand, "fr") } : existingProduct.brand;
 
     const updatedPrice = {
       actualPrice: price?.actualPrice ?? existingProduct.price.actualPrice,
@@ -314,12 +306,14 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
       brand: updatedBrand,
       price: updatedPrice,
       quantity: quantity ?? existingProduct.quantity,
-      Category: categoryId ?? existingProduct.Category,
-      SubCategory: subcategoryId ?? existingProduct.SubCategory,
-      SubSubcategory: subsubcategoryId ?? existingProduct.SubSubcategory,
+      Category: categoryId ||existingProduct.Category,
+      SubCategory: subcategoryId || existingProduct.SubCategory,
+      SubSubcategory: subsubcategoryId || existingProduct.SubSubcategory,
       picture: productImages ?? existingProduct.picture,
       isActive: isActive ?? existingProduct.isActive,
-      compatibleVehicles: updatedCompatibleVehicles, 
+      autoPartType: autoPartType ?? existingProduct.autoPartType,
+      partNo: partNo ?? existingProduct.partNo,
+      compatibleVehicles: updatedCompatibleVehicles,
     };
 
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -353,3 +347,70 @@ export const deleteProduct = async (req: Request, res: Response) => {
     res.status(404).json({ message: "Error deleting product", error });
   }
 };
+
+export const getProductByQuery= async (req: Request, res: Response) => {
+  try {
+    const { year, make, model } = req.query;
+
+    if (!year || !make || !model) {
+      return res.status(400).json({
+        success: false,
+        message: "Year, make, and model are required parameters.",
+      });
+    }
+
+    const products = await Product.find({
+      "compatibleVehicles.year": Number(year),
+      "compatibleVehicles.make": make,
+      "compatibleVehicles.model": model,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Products fetched successfully",
+      products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching products",
+      error: error,
+    });
+  }
+};
+export const getProductByautoPartType= async (req: Request, res: Response) => {
+  try {
+    const { type } = req.query;
+
+    if (!type) {
+      return res.status(400).json({
+        success: false,
+        message: "type is required parameters.",
+      });
+    }
+
+    const products = await Product.find({
+      autoPartType: type,
+    });
+    if(products.length===0){{
+      return res.status(404).json({
+        success:true,
+        message:"No Products found for this Part"
+      })
+    }}
+    res.status(200).json({
+      success: true,
+      message: "Products fetched successfully",
+      products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching products",
+      error: error,
+    });
+  }
+};
+
+
+
