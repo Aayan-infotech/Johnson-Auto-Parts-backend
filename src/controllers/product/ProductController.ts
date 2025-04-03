@@ -1,8 +1,5 @@
 import { Request, Response } from "express";
 import Product from "../../models/ProductModel";
-
-import RatingAndReviews from "../../models/RatingAndReviews";
-
 import Category from "../../models/Category";
 import Subcategory from "../../models/Subcategory";
 import SubSubcategory from "../../models/SubSubcategory";
@@ -21,54 +18,68 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
       name,
       description,
       price,
+      partNo,
       brand,
-      picture,
       quantity,
       isActive,
+      autoPartType,
+      compatibleVehicles,
     } = req.body;
-      const productImage=req.fileLocations;
-    if (!categoryId || !name || !description || !price?.actualPrice || !brand) {
-      return res.status(400).json({ message: "Missing required fields." });
-    }
-    console.log(req.body)
 
-    // Validate Category
-    const categoryExists = await Category.findById(categoryId);
-    if (!categoryExists) {
+    const productImages = req.fileLocations || [];
+
+    if (!name || !description || !price?.actualPrice || !brand) {
       return res
         .status(400)
-        .json({ message: "Invalid categoryId. Category does not exist." });
+        .json({ success: false, message: "Missing required fields." });
     }
 
-    // Validate Subcategory (if provided)
-    if (subcategoryId) {
-      const subcategoryExists = await Subcategory.findById(subcategoryId);
-      if (!subcategoryExists) {
-        return res.status(400).json({
-          message: "Invalid subcategoryId. Subcategory does not exist.",
-        });
+    if (categoryId) {
+      const categoryExists = await Category.findById(categoryId);
+      if (!categoryExists) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "Invalid categoryId. Category does not exist.",
+          });
       }
     }
 
-    // Validate Sub-subcategory (if provided)
+    if (subcategoryId) {
+      const subcategoryExists = await Subcategory.findById(subcategoryId);
+      if (!subcategoryExists) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "Invalid subcategoryId. Subcategory does not exist.",
+          });
+      }
+    }
+
     if (subsubcategoryId) {
       const subsubcategoryExists = await SubSubcategory.findById(
         subsubcategoryId
       );
       if (!subsubcategoryExists) {
-        return res.status(400).json({
-          message: "Invalid subsubcategoryId. Sub-subcategory does not exist.",
-        });
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message:
+              "Invalid subsubcategoryId. Sub-subcategory does not exist.",
+          });
       }
     }
 
-    // Translate to French
+    // Translate text fields to French
     const nameFr = await translateText(name, "fr");
     const descriptionFr = await translateText(description, "fr");
     const brandFr = await translateText(brand, "fr");
 
     const product = new Product({
-      Category: categoryId,
+      Category: categoryId || null,
       SubCategory: subcategoryId || null,
       SubSubcategory: subsubcategoryId || null,
       name: { en: name, fr: nameFr },
@@ -77,20 +88,29 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
         actualPrice: price.actualPrice,
         discountPercent: price.discountPercent ?? 0,
       },
+      partNo: partNo || null,
       brand: { en: brand, fr: brandFr },
-      picture:productImage,
+      picture: productImages,
       quantity: quantity ?? 0,
       isActive: isActive ?? true,
+      autoPartType: autoPartType || "",
+      compatibleVehicles: {
+        year: compatibleVehicles?.year || [],
+        make: compatibleVehicles?.make || [],
+        model: compatibleVehicles?.model || [],
+      },
+      salesCount: 0,
     });
 
     await product.save();
-    res.status(201).json({
+
+    return res.status(201).json({
       success: true,
       message: "Product created successfully",
       product,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Error creating product",
       error: (error as Error).message,
@@ -136,7 +156,6 @@ export const getAllProducts = async (req: Request, res: Response) => {
 };
 
 export const getProductById = async (req: Request, res: Response) => {
-
   try {
     const { lang } = req.query as { lang?: "en" | "fr" };
 
@@ -155,9 +174,14 @@ export const getProductById = async (req: Request, res: Response) => {
     const discountPercent = product.price?.discountPercent || 0;
     const discountedPrice = actualPrice - (actualPrice * discountPercent) / 100;
 
-    // Handle Category population
-    const category =
-      typeof product.Category === "object" ? product.Category : null;
+    // Fetch products with the same `autoPartType`
+    let similarProducts: any[] = [];
+    if (product.autoPartType) {
+      similarProducts = await Product.find({
+        autoPartType: product.autoPartType,
+        _id: { $ne: product._id }, // Exclude the current product
+      }).lean();
+    }
 
     res.status(200).json({
       success: true,
@@ -165,11 +189,11 @@ export const getProductById = async (req: Request, res: Response) => {
       product: {
         ...product,
         name: product?.name?.[lang ?? "en"] ?? product.name.en,
-        description:
-          product?.description?.[lang ?? "en"] ?? product.description.en,
+        description: product?.description?.[lang ?? "en"] ?? product.description.en,
         brand: product?.brand?.[lang ?? "en"] ?? product.brand.en,
         discountedPrice: parseFloat(discountedPrice.toFixed(2)),
       },
+      similarProducts, // Include similar products in the response
     });
   } catch (error) {
     res.status(500).json({
@@ -179,6 +203,7 @@ export const getProductById = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 export const getProductBySubCategoryOrSubSubCategory = async (
   req: Request,
@@ -246,71 +271,102 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
     const {
       name,
       description,
-      price, 
-      discount,
+      price,
       quantity,
       categoryId,
       subcategoryId,
       subsubcategoryId,
       brand,
-      picture,
       isActive,
+      autoPartType,
+      compatibleVehicles,
+      partNo,
     } = req.body;
-      const productImages=req.fileLocations;
+
+    const productImages = req.fileLocations;
+
+    // Find the existing product
     const existingProduct = await Product.findById(productId);
     if (!existingProduct) {
-      return res.status(404).json({ success: false, message: "Product not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
     }
 
+    // Validate category existence
     if (categoryId && !(await Category.findById(categoryId))) {
-      return res.status(400).json({ success: false, message: "Invalid categoryId. Category does not exist." });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Invalid categoryId. Category does not exist.",
+        });
     }
 
     if (subcategoryId && !(await Subcategory.findById(subcategoryId))) {
-      return res.status(400).json({ success: false, message: "Invalid subcategoryId. Subcategory does not exist." });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Invalid subcategoryId. Subcategory does not exist.",
+        });
     }
 
-    if (subsubcategoryId && !(await SubSubcategory.findById(subsubcategoryId))) {
-      return res.status(400).json({ success: false, message: "Invalid subsubcategoryId. Sub-subcategory does not exist." });
+    if (
+      subsubcategoryId &&
+      !(await SubSubcategory.findById(subsubcategoryId))
+    ) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Invalid subsubcategoryId. Sub-subcategory does not exist.",
+        });
     }
 
-    // Ensure multilingual support
-    let updatedName = { ...existingProduct.name };
-    let updatedDescription = { ...existingProduct.description };
-    let updatedBrand = { ...existingProduct.brand };
+    // Handle translation if new values are provided
+    const updatedName = name
+      ? { en: name, fr: await translateText(name, "fr") }
+      : existingProduct.name;
+    const updatedDescription = description
+      ? { en: description, fr: await translateText(description, "fr") }
+      : existingProduct.description;
+    const updatedBrand = brand
+      ? { en: brand, fr: await translateText(brand, "fr") }
+      : existingProduct.brand;
 
-    if (name) {
-      const nameFr = await translateText(name, "fr");
-      updatedName = { en: name, fr: nameFr };
-    }
-
-    if (description) {
-      const descriptionFr = await translateText(description, "fr");
-      updatedDescription = { en: description, fr: descriptionFr };
-    }
-
-    if (brand) {
-      const brandFr = await translateText(brand, "fr");
-      updatedBrand = { en: brand, fr: brandFr };
-    }
-
-    // Correctly extracting `actualPrice` and `discountPercent` from `price`
     const updatedPrice = {
       actualPrice: price?.actualPrice ?? existingProduct.price.actualPrice,
-      discountPercent: price?.discountPercent ?? existingProduct.price.discountPercent,
+      discountPercent:
+        price?.discountPercent ?? existingProduct.price.discountPercent,
     };
+
+    const updatedCompatibleVehicles = compatibleVehicles
+      ? {
+          year:
+            compatibleVehicles.year || existingProduct.compatibleVehicles.year,
+          make:
+            compatibleVehicles.make || existingProduct.compatibleVehicles.make,
+          model:
+            compatibleVehicles.model ||
+            existingProduct.compatibleVehicles.model,
+        }
+      : existingProduct.compatibleVehicles;
 
     const updateData = {
       name: updatedName,
       description: updatedDescription,
       brand: updatedBrand,
-      price: updatedPrice, // Now correctly structured
+      price: updatedPrice,
       quantity: quantity ?? existingProduct.quantity,
-      Category: categoryId ?? existingProduct.Category,
-      SubCategory: subcategoryId ?? existingProduct.SubCategory,
-      SubSubcategory: subsubcategoryId ?? existingProduct.SubSubcategory,
+      Category: categoryId || existingProduct.Category,
+      SubCategory: subcategoryId || existingProduct.SubCategory,
+      SubSubcategory: subsubcategoryId || existingProduct.SubSubcategory,
       picture: productImages ?? existingProduct.picture,
       isActive: isActive ?? existingProduct.isActive,
+      autoPartType: autoPartType ?? existingProduct.autoPartType,
+      partNo: partNo ?? existingProduct.partNo,
+      compatibleVehicles: updatedCompatibleVehicles,
     };
 
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -333,7 +389,6 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
   }
 };
 
-
 export const deleteProduct = async (req: Request, res: Response) => {
   try {
     const deletedProduct = await Product.findByIdAndDelete(req.params.id);
@@ -343,5 +398,71 @@ export const deleteProduct = async (req: Request, res: Response) => {
     res.status(200).json({ message: "Product deleted successfully" });
   } catch (error) {
     res.status(404).json({ message: "Error deleting product", error });
+  }
+};
+
+export const getProductByQuery = async (req: Request, res: Response) => {
+  try {
+    const { year, make, model } = req.query;
+
+    if (!year || !make || !model) {
+      return res.status(400).json({
+        success: false,
+        message: "Year, make, and model are required parameters.",
+      });
+    }
+
+    const products = await Product.find({
+      "compatibleVehicles.year": Number(year),
+      "compatibleVehicles.make": make,
+      "compatibleVehicles.model": model,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Products fetched successfully",
+      products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching products",
+      error: error,
+    });
+  }
+};
+export const getProductByautoPartType = async (req: Request, res: Response) => {
+  try {
+    const { type } = req.query;
+
+    if (!type) {
+      return res.status(400).json({
+        success: false,
+        message: "type is required parameters.",
+      });
+    }
+
+    const products = await Product.find({
+      autoPartType: type,
+    });
+    if (products.length === 0) {
+      {
+        return res.status(404).json({
+          success: true,
+          message: "No Products found for this Part",
+        });
+      }
+    }
+    res.status(200).json({
+      success: true,
+      message: "Products fetched successfully",
+      products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching products",
+      error: error,
+    });
   }
 };

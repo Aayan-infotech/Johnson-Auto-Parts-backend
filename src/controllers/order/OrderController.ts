@@ -17,12 +17,10 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
     const { address, payment } = req.body;
 
     if (!address || !payment) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Address and payment details are required",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Address and payment details are required",
+      });
     }
 
     const cart = await Cart.findOne({ user: userId }).populate("items.product");
@@ -60,10 +58,14 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
     for (const item of cart.items) {
       const product: any = item.product;
       await Product.findByIdAndUpdate(product._id, {
-        $inc: { quantity: -item.quantity }, 
+        $inc: { 
+          quantity: -item.quantity,  
+          salesCount: item.quantity   
+        },
       });
     }
 
+    // Clear user's cart after placing order
     await Cart.findOneAndUpdate({ user: userId }, { items: [] });
 
     return res.status(201).json({
@@ -73,15 +75,14 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
     });
   } catch (error) {
     console.error("Error placing order:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error placing order",
-        error: error as string,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error placing order",
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 };
+
 
 export const getOrderByUserId = async(req: Request, res: Response) => {
   try{
@@ -176,3 +177,4 @@ export const changeOrderStatus = async(req: Request, res: Response) => {
     });
   }
 }
+
