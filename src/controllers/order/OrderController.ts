@@ -83,3 +83,98 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
   }
 };
 
+
+export const getOrderByUserId = async(req: Request, res: Response) => {
+  try{
+    const userId = req.params.userId;
+
+    const orders = await Order.find({user: userId});
+
+    if(orders.length === 0){
+      return res.status(200).json({
+        success: true,
+        status: 200,
+        message: "No orders found!",
+        data: orders,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      status: 200,
+      message: "Orders fetched successfully!",
+      data: orders,
+    });
+  }catch(error){
+    return res.status(500).json({
+      success: false,
+      status: 500,
+      message: "Internal server error!",
+      error: error,
+    });
+  }
+}
+
+// get orders for admin panel
+export const getOrders = async(req: Request, res: Response) => {
+  try{
+    const orders = await Order.find().populate('user', 'name email');
+
+    if(orders.length === 0){
+      return res.status(200).json({
+        success: true,
+        status: 200,
+        message: "No orders found!",
+        data: orders
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      status: 200,
+      message: "Orders fetched successfully!",
+      data: orders
+    });
+  }catch(error){
+    return res.status(500).json({
+      success: false,
+      status: 500,
+      message: "Internal server error!",
+      error: error
+    });
+  }
+};
+
+export const changeOrderStatus = async(req: Request, res: Response) => {
+  try{
+    const orderId = req.params.orderId;
+    const {status} = req.body;
+
+    const order = await Order.findById(orderId);
+    if(!order){
+      return res.status(404).json({
+        success: false,
+        status: 404,
+        message: "Order not found!"
+      });
+    }
+
+    order.status = status || order.status;
+    await order.save();
+
+    res.status(200).json({
+      success: true,
+      status: 200,
+      message: "Order fetched successfully!",
+      data: order
+    });
+  }catch(error){
+    return res.status(500).json({
+      success: false,
+      status:500,
+      message: "Internal server error!",
+      error: error
+    });
+  }
+}
+
