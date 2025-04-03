@@ -19,7 +19,7 @@ const ProductSchema = new Schema<IProduct>(
     quality: { type: String},
     quantity: { type: Number, required: true, default: 0 },
     isActive: { type: Boolean, required: true, default: true },
-    autoPartType:{type:String},
+    autoPartType:{type:String},      /* brake, clutch, brake, shoe etc*/
     compatibleVehicles: {
       year: [{ type: Number, }], // e.g., [2018, 2019, 2020]
       make: [{ type: String,}], // e.g., ["Toyota", "Honda"]
