@@ -4,6 +4,7 @@ import Category from "../../models/Category";
 import Subcategory from "../../models/Subcategory";
 import SubSubcategory from "../../models/SubSubcategory";
 import Review from "../../models/RatingAndReviews"
+import Order from "../../models/OrderModel"
 import { translateText } from "../../utills/translateService";
 interface AuthRequest extends Request {
   user?: { userId: string; email: string };
@@ -593,6 +594,87 @@ export const getProductByautoPartType = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: "Error fetching products",
+      error: (error as Error).message,
+    });
+  }
+};
+
+export const getFilteredProducts = async (req: AuthRequest, res: Response) => {
+  try {
+    const { filter, lang } = req.query as { filter?: string; lang?: "en" | "fr" };
+
+    if (!filter) {
+      return res.status(400).json({
+        success: false,
+        message: "Filter is a required parameter.",
+      });
+    }
+
+    let products = [];
+
+    if (filter === "Top Selling") {
+      const mostSoldProducts = await Order.aggregate([
+        { $unwind: "$items" },
+        {
+          $group: {
+            _id: "$items.productId",
+            totalSold: { $sum: "$items.quantity" },
+          },
+        },
+        { $sort: { totalSold: -1 } }, 
+        { $limit: 10 },
+      ]);
+
+      const productIds = mostSoldProducts.map((p) => p._id);
+      products = await Product.find({ _id: { $in: productIds } })
+        .populate("Category", "name")
+        .lean();
+    } else {
+      let filterQuery = {};
+
+      if (filter === "Replacement Parts") {
+        filterQuery = { categoryType: "Replacement Parts" };
+      } else if (filter === "Lighting") {
+        filterQuery = { categoryType: "Lighting" };
+      } else if (filter === "Performance") {
+        filterQuery = { categoryType: "Performance" };
+      }
+
+      products = await Product.find(filterQuery)
+        .populate("Category", "name")
+        .lean();
+    }
+    
+    if (!products.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No products found for this filter.",
+      });
+    }
+
+    const updatedProducts = products.map((product) => {
+      const actualPrice = product.price?.actualPrice || 0;
+      const discountPercent = product.price?.discountPercent || 0;
+      const discountedPrice = actualPrice - (actualPrice * discountPercent) / 100;
+
+      return {
+        ...product,
+        name: product?.name?.[lang ?? "en"] ?? product.name.en,
+        description: product?.description?.[lang ?? "en"] ?? product.description.en,
+        brand: product?.brand?.[lang ?? "en"] ?? product.brand.en,
+        discountedPrice: parseFloat(discountedPrice.toFixed(2)),
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Filtered products fetched successfully",
+      products: updatedProducts,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching filtered products",
       error: (error as Error).message,
     });
   }
