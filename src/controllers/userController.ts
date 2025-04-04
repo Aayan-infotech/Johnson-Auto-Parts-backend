@@ -289,7 +289,7 @@ const blockUnblockUser = async (req: Request, res: Response) => {
 
     user.isActive = !user.isActive;
     await user.save();
-    console.log(user);
+    // console.log(user);
 
     res.status(200).json({
       success: true,
@@ -298,9 +298,9 @@ const blockUnblockUser = async (req: Request, res: Response) => {
       data: user.isActive,
     });
   } catch (error) {
-    return res.status(404).json({
+    return res.status(500).json({
       success: false,
-      status: 404,
+      status: 500,
       message: "Internal server error!",
       error: error,
     });
