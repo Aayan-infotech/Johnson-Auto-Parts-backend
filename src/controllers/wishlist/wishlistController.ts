@@ -57,9 +57,9 @@ export const addToWishlist = async (req: AuthRequest, res: Response) => {
         return res.status(200).json({
           success: true,
           message: "Product added to wishlist",
-          // wishlist: updatedWishlist?.items.map(item => ({
-          //   product: item.product
-          // }))
+          wishlist: updatedWishlist?.items.map(item => ({
+            product: item.product
+          }))
         });
       }
 
@@ -86,13 +86,13 @@ export const addToWishlist = async (req: AuthRequest, res: Response) => {
       return res.status(200).json({
         success: true,
         message: "Product added to wishlist (Guest)",
-        // wishlist: req.session.wishlist.map(item => ({
-        //   product: {
-        //     _id: item.productId,
-        //     name: item.name,
-        //     picture: item.picture
-        //   }
-        // }))
+        wishlist: req.session.wishlist.map(item => ({
+          product: {
+            _id: item.productId,
+            name: item.name,
+            picture: item.picture
+          }
+        }))
       });
     }
   } catch (error) {
@@ -133,7 +133,7 @@ export const removeFromWishlist = async (req: AuthRequest, res: Response) => {
 
       return res.status(200).json({
         success: true,
-        message: "Product removed from wishlist",
+        message: "Product removed from wishlist",updatedWishlist
       });
     } else {
       if (!req.session.wishlist) {
@@ -148,13 +148,13 @@ export const removeFromWishlist = async (req: AuthRequest, res: Response) => {
       return res.status(200).json({
         success: true,
         message: "Product removed from wishlist (Guest)",
-        // wishlist: req.session.wishlist.map((item) => ({
-        //   product: {
-        //     _id: item.productId,
-        //     name: item.name,
-        //     picture: item.picture,
-        //   },
-        // })),
+        wishlist: req.session.wishlist.map((item) => ({
+          product: {
+            _id: item.productId,
+            name: item.name,
+            picture: item.picture,
+          },
+        })),
       });
     }
   } catch (error) {

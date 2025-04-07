@@ -3,7 +3,8 @@ import Product from "../../models/ProductModel";
 import Category from "../../models/Category";
 import Subcategory from "../../models/Subcategory";
 import SubSubcategory from "../../models/SubSubcategory";
-import Review from "../../models/RatingAndReviews"
+import Review from "../../models/RatingAndReviews";
+import Order from "../../models/OrderModel";
 import { translateText } from "../../utills/translateService";
 interface AuthRequest extends Request {
   user?: { userId: string; email: string };
@@ -38,24 +39,20 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
     if (categoryId) {
       const categoryExists = await Category.findById(categoryId);
       if (!categoryExists) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "Invalid categoryId. Category does not exist.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "Invalid categoryId. Category does not exist.",
+        });
       }
     }
 
     if (subcategoryId) {
       const subcategoryExists = await Subcategory.findById(subcategoryId);
       if (!subcategoryExists) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "Invalid subcategoryId. Subcategory does not exist.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "Invalid subcategoryId. Subcategory does not exist.",
+        });
       }
     }
 
@@ -64,13 +61,10 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
         subsubcategoryId
       );
       if (!subsubcategoryExists) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message:
-              "Invalid subsubcategoryId. Sub-subcategory does not exist.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "Invalid subsubcategoryId. Sub-subcategory does not exist.",
+        });
       }
     }
 
@@ -141,19 +135,23 @@ export const getAllProducts = async (req: Request, res: Response) => {
     ]);
 
     // Convert reviews array into a map for quick lookup
-    const ratingMap = new Map(reviews.map((r) => [r._id.toString(), r.avgRating.toFixed(1)]));
+    const ratingMap = new Map(
+      reviews.map((r) => [r._id.toString(), r.avgRating.toFixed(1)])
+    );
 
     // Process products
     const updatedProducts = products.map((product) => {
       const actualPrice: number = product?.price?.actualPrice || 0;
       const discountPercent: number = product?.price?.discountPercent || 0;
-      const discountedPrice: number = actualPrice - (actualPrice * discountPercent) / 100;
+      const discountedPrice: number =
+        actualPrice - (actualPrice * discountPercent) / 100;
       const averageRating = ratingMap.get(product._id.toString()) || "0.0"; // Default 0 if no rating
 
       return {
         ...product,
         name: product?.name?.[lang ?? "en"] ?? product.name.en,
-        description: product?.description?.[lang ?? "en"] ?? product.description.en,
+        description:
+          product?.description?.[lang ?? "en"] ?? product.description.en,
         brand: product?.brand?.[lang ?? "en"] ?? product.brand.en,
         discountedPrice: parseFloat(discountedPrice.toFixed(2)),
         averageRating, // Include average rating
@@ -197,7 +195,10 @@ export const getProductById = async (req: Request, res: Response) => {
     const reviews = await Review.find({ productId: product._id }).lean();
     let averageRating = 0;
     if (reviews.length > 0) {
-      const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+      const totalRating = reviews.reduce(
+        (sum, review) => sum + review.rating,
+        0
+      );
       averageRating = totalRating / reviews.length;
     }
 
@@ -216,7 +217,8 @@ export const getProductById = async (req: Request, res: Response) => {
       product: {
         ...product,
         name: product?.name?.[lang ?? "en"] ?? product.name.en,
-        description: product?.description?.[lang ?? "en"] ?? product.description.en,
+        description:
+          product?.description?.[lang ?? "en"] ?? product.description.en,
         brand: product?.brand?.[lang ?? "en"] ?? product.brand.en,
         discountedPrice: parseFloat(discountedPrice.toFixed(2)),
         averageRating: averageRating.toFixed(1), // Include average rating
@@ -231,7 +233,6 @@ export const getProductById = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 export const getProductBySubCategoryOrSubSubCategory = async (
   req: Request,
@@ -277,19 +278,23 @@ export const getProductBySubCategoryOrSubSubCategory = async (
     ]);
 
     // Convert to a map for fast lookup
-    const ratingMap = new Map(reviews.map((r) => [r._id.toString(), r.avgRating.toFixed(1)]));
+    const ratingMap = new Map(
+      reviews.map((r) => [r._id.toString(), r.avgRating.toFixed(1)])
+    );
 
     // Process products with rating
     const updatedProductsData = productsData.map((product) => {
       const actualPrice = product.price?.actualPrice || 0;
       const discountPercent = product.price?.discountPercent || 0;
-      const discountedPrice = actualPrice - (actualPrice * discountPercent) / 100;
+      const discountedPrice =
+        actualPrice - (actualPrice * discountPercent) / 100;
       const averageRating = ratingMap.get(product._id.toString()) || "0.0"; // Default 0 if no rating
 
       return {
         ...product,
         name: product?.name?.[lang ?? "en"] ?? product.name.en,
-        description: product?.description?.[lang ?? "en"] ?? product.description.en,
+        description:
+          product?.description?.[lang ?? "en"] ?? product.description.en,
         brand: product?.brand?.[lang ?? "en"] ?? product.brand.en,
         discountedPrice: parseFloat(discountedPrice.toFixed(2)),
         averageRating, // Include average rating
@@ -340,33 +345,27 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
 
     // Validate category existence
     if (categoryId && !(await Category.findById(categoryId))) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Invalid categoryId. Category does not exist.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid categoryId. Category does not exist.",
+      });
     }
 
     if (subcategoryId && !(await Subcategory.findById(subcategoryId))) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Invalid subcategoryId. Subcategory does not exist.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid subcategoryId. Subcategory does not exist.",
+      });
     }
 
     if (
       subsubcategoryId &&
       !(await SubSubcategory.findById(subsubcategoryId))
     ) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Invalid subsubcategoryId. Sub-subcategory does not exist.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid subsubcategoryId. Sub-subcategory does not exist.",
+      });
     }
 
     // Handle translation if new values are provided
@@ -445,7 +444,7 @@ export const deleteProduct = async (req: Request, res: Response) => {
     res.status(404).json({ message: "Error deleting product", error });
   }
 };
-
+// year model and make type
 export const getProductByQuery = async (req: Request, res: Response) => {
   try {
     const { year, make, model, lang } = req.query as {
@@ -500,13 +499,15 @@ export const getProductByQuery = async (req: Request, res: Response) => {
     const updatedProducts = products.map((product) => {
       const actualPrice = product.price?.actualPrice || 0;
       const discountPercent = product.price?.discountPercent || 0;
-      const discountedPrice = actualPrice - (actualPrice * discountPercent) / 100;
+      const discountedPrice =
+        actualPrice - (actualPrice * discountPercent) / 100;
       const averageRating = ratingMap.get(product._id.toString()) || "0.0"; // Default 0 if no rating
 
       return {
         ...product,
         name: product?.name?.[lang ?? "en"] ?? product.name.en,
-        description: product?.description?.[lang ?? "en"] ?? product.description.en,
+        description:
+          product?.description?.[lang ?? "en"] ?? product.description.en,
         brand: product?.brand?.[lang ?? "en"] ?? product.brand.en,
         discountedPrice: parseFloat(discountedPrice.toFixed(2)),
         averageRating, // Include average rating
@@ -526,6 +527,7 @@ export const getProductByQuery = async (req: Request, res: Response) => {
     });
   }
 };
+// products by autopart type
 export const getProductByautoPartType = async (req: Request, res: Response) => {
   try {
     const { type, lang } = req.query as { type?: string; lang?: "en" | "fr" };
@@ -571,13 +573,15 @@ export const getProductByautoPartType = async (req: Request, res: Response) => {
     const updatedProducts = products.map((product) => {
       const actualPrice = product.price?.actualPrice || 0;
       const discountPercent = product.price?.discountPercent || 0;
-      const discountedPrice = actualPrice - (actualPrice * discountPercent) / 100;
+      const discountedPrice =
+        actualPrice - (actualPrice * discountPercent) / 100;
       const averageRating = ratingMap.get(product._id.toString()) || "0.0"; // Default 0 if no rating
 
       return {
         ...product,
         name: product?.name?.[lang ?? "en"] ?? product.name.en,
-        description: product?.description?.[lang ?? "en"] ?? product.description.en,
+        description:
+          product?.description?.[lang ?? "en"] ?? product.description.en,
         brand: product?.brand?.[lang ?? "en"] ?? product.brand.en,
         discountedPrice: parseFloat(discountedPrice.toFixed(2)),
         averageRating, // Include average rating
@@ -597,4 +601,104 @@ export const getProductByautoPartType = async (req: Request, res: Response) => {
     });
   }
 };
+// home page api  for *top*/*selling lighting* *replacement* and *performance* type
+export const getFilteredProducts = async (req: AuthRequest, res: Response) => {
+  try {
+    const { filter, lang } = req.query as {
+      filter?: string;
+      lang?: "en" | "fr";
+    };
+
+    if (!filter) {
+      return res.status(400).json({
+        success: false,
+        message: "Filter is a required parameter.",
+      });
+    }
+
+    let products = [];
+
+    if (filter === "Top Selling") {
+      const mostSoldProducts = await Order.aggregate([
+        { $unwind: "$items" },
+        {
+          $group: {
+            _id: "$items.product",
+            totalSold: { $sum: "$items.quantity" },
+          },
+        },
+        { $sort: { totalSold: -1 } },
+        { $limit: 10 },
+      ]);
+
+      const productIds = mostSoldProducts.map((p) => p._id);
+      products = await Product.find({ _id: { $in: productIds } })
+        .populate("Category", "name")
+        .lean();
+    } else {
+      const filterMap: Record<string, string[]> = {
+        "Replacement Parts": ["brake","brakes", "clutch", "pads","break pad"],
+        "Lighting": ["light","lights", "indicator", "headlamp", "headlamps","indicators"],
+        "Performance": ["exhaust", "turbo", "tuning","engine"],
+      };
+
+      if (!filterMap[filter]) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid filter option.",
+        });
+      }
+
+      const filterQuery = {
+        autoPartType: {
+          $in: filterMap[filter].map(
+            (type) => new RegExp(`^${type}$`, "i")
+          ),
+        },
+      };
+
+
+      products = await Product.find(filterQuery)
+        .populate("Category", "name")
+        .lean();
+    }
+
+    if (!products.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No products found for this filter.",
+      });
+    }
+
+    const updatedProducts = products.map((product) => {
+      const actualPrice = product.price?.actualPrice || 0;
+      const discountPercent = product.price?.discountPercent || 0;
+      const discountedPrice =
+        actualPrice - (actualPrice * discountPercent) / 100;
+
+      return {
+        ...product,
+        name: product?.name?.[lang ?? "en"] ?? product.name.en,
+        description:
+          product?.description?.[lang ?? "en"] ?? product.description.en,
+        brand: product?.brand?.[lang ?? "en"] ?? product.brand.en,
+        discountedPrice: parseFloat(discountedPrice.toFixed(2)),
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Filtered products fetched successfully",
+      length: products.length,
+      products: updatedProducts,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching filtered products",
+      error: (error as Error).message,
+    });
+  }
+};
+
 
