@@ -700,5 +700,3 @@ export const getFilteredProducts = async (req: AuthRequest, res: Response) => {
     });
   }
 };
-
-
