@@ -25,7 +25,7 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
       quantity,
       isActive,
       autoPartType,
-      compatibleVehicles,
+      compatibleVehicles, // ✅ now expecting array of { make, models: [{ model, years: [] }] }
     } = req.body;
 
     const productImages = req.fileLocations || [];
@@ -89,11 +89,7 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
       quantity: quantity ?? 0,
       isActive: isActive ?? true,
       autoPartType: autoPartType || "",
-      compatibleVehicles: {
-        year: compatibleVehicles?.year || [],
-        make: compatibleVehicles?.make || [],
-        model: compatibleVehicles?.model || [],
-      },
+      compatibleVehicles: compatibleVehicles ?? [], // ✅ Store directly
       salesCount: 0,
     });
 
@@ -329,7 +325,7 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
       brand,
       isActive,
       autoPartType,
-      compatibleVehicles,
+      compatibleVehicles, // Now expected to be an array of { make, models: [{ model, years: [] }] }
       partNo,
     } = req.body;
 
@@ -372,9 +368,11 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
     const updatedName = name
       ? { en: name, fr: await translateText(name, "fr") }
       : existingProduct.name;
+
     const updatedDescription = description
       ? { en: description, fr: await translateText(description, "fr") }
       : existingProduct.description;
+
     const updatedBrand = brand
       ? { en: brand, fr: await translateText(brand, "fr") }
       : existingProduct.brand;
@@ -386,15 +384,7 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
     };
 
     const updatedCompatibleVehicles = compatibleVehicles
-      ? {
-          year:
-            compatibleVehicles.year || existingProduct.compatibleVehicles.year,
-          make:
-            compatibleVehicles.make || existingProduct.compatibleVehicles.make,
-          model:
-            compatibleVehicles.model ||
-            existingProduct.compatibleVehicles.model,
-        }
+      ? compatibleVehicles // ✅ accept new array if provided
       : existingProduct.compatibleVehicles;
 
     const updateData = {
@@ -637,9 +627,16 @@ export const getFilteredProducts = async (req: AuthRequest, res: Response) => {
         .lean();
     } else {
       const filterMap: Record<string, string[]> = {
-        "Replacement Parts": ["brake","brakes", "clutch", "pads","break pad"],
-        "Lighting": ["light","lights", "indicator", "headlamp", "headlamps","indicators"],
-        "Performance": ["exhaust", "turbo", "tuning","engine"],
+        "Replacement Parts": ["brake", "brakes", "clutch", "pads", "break pad"],
+        Lighting: [
+          "light",
+          "lights",
+          "indicator",
+          "headlamp",
+          "headlamps",
+          "indicators",
+        ],
+        Performance: ["exhaust", "turbo", "tuning", "engine"],
       };
 
       if (!filterMap[filter]) {
@@ -651,12 +648,9 @@ export const getFilteredProducts = async (req: AuthRequest, res: Response) => {
 
       const filterQuery = {
         autoPartType: {
-          $in: filterMap[filter].map(
-            (type) => new RegExp(`^${type}$`, "i")
-          ),
+          $in: filterMap[filter].map((type) => new RegExp(`^${type}$`, "i")),
         },
       };
-
 
       products = await Product.find(filterQuery)
         .populate("Category", "name")
@@ -696,6 +690,184 @@ export const getFilteredProducts = async (req: AuthRequest, res: Response) => {
     res.status(500).json({
       success: false,
       message: "Error fetching filtered products",
+      error: (error as Error).message,
+    });
+  }
+};
+
+export const getYears = async (req: Request, res: Response) => {
+  try {
+    const products = await Product.find({}, "compatibleVehicles");
+
+    const yearSet = new Set<number>();
+
+    products.forEach((product) => {
+      product.compatibleVehicles.forEach((cv) => {
+        cv.models.forEach((model) => {
+          model.years.forEach((year) => {
+            yearSet.add(year);
+          });
+        });
+      });
+    });
+
+    const years = Array.from(yearSet).sort((a, b) => a - b); // Optional: sort by year
+    res.status(200).json({ success: true, years });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching years",
+      error: (error as Error).message,
+    });
+  }
+};
+
+export const getMakesByYear = async (req: Request, res: Response) => {
+  try {
+    const year = Number(req.query.year);
+    if (!year) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Year is required" });
+    }
+
+    const products = await Product.find(
+      { "compatibleVehicles.models.years": year },
+      "compatibleVehicles"
+    );
+
+    const makeSet = new Set<string>();
+
+    products.forEach((product) => {
+      product.compatibleVehicles.forEach((cv) => {
+        const relevantModel = cv.models.some((model) =>
+          model.years.includes(year)
+        );
+        if (relevantModel) {
+          makeSet.add(cv.make);
+        }
+      });
+    });
+
+    const makes = Array.from(makeSet).sort();
+    res.status(200).json({ success: true, makes });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching makes",
+      error: (error as Error).message,
+    });
+  }
+};
+
+export const getModelsByYearAndMake = async (req: Request, res: Response) => {
+  try {
+    const year = Number(req.query.year);
+    const make = req.query.make?.toString();
+
+    if (!year || !make) {
+      return res.status(400).json({
+        success: false,
+        message: "Year and make are required",
+      });
+    }
+
+    const makeRegex = new RegExp(`^${make}$`, "i"); // Case-insensitive exact match
+
+    const products = await Product.find(
+      {
+        "compatibleVehicles.make": makeRegex,
+        "compatibleVehicles.models.years": year,
+      },
+      "compatibleVehicles"
+    );
+
+    const modelSet = new Set<string>();
+
+    products.forEach((product) => {
+      product.compatibleVehicles.forEach((cv) => {
+        if (cv.make.toLowerCase() === make.toLowerCase()) {
+          cv.models.forEach((m) => {
+            if (m.years.includes(year)) {
+              modelSet.add(m.model);
+            }
+          });
+        }
+      });
+    });
+
+    return res.status(200).json({
+      success: true,
+      models: Array.from(modelSet).sort(),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching models",
+      error: (error as Error).message,
+    });
+  }
+};
+
+export const getProductsByYearMakeModel = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const year = Number(req.query.year);
+    const make = req.query.make?.toString().trim();
+    const model = req.query.model?.toString().trim();
+
+    if (!year || !make || !model) {
+      return res.status(400).json({
+        success: false,
+        message: "Year, make, and model are required",
+      });
+    }
+
+    // Build case-insensitive regex patterns for make and model
+    const makeRegex = new RegExp(`^${make}$`, "i");
+    const modelRegex = new RegExp(`^${model}$`, "i");
+
+    // Use aggregation to unwind and match nested arrays
+    const products = await Product.aggregate([
+      // Unwind compatibleVehicles array
+      { $unwind: "$compatibleVehicles" },
+      // Unwind the models array inside each compatibleVehicles object
+      { $unwind: "$compatibleVehicles.models" },
+      // Match documents with the correct make, model, and year within the same nested object
+      {
+        $match: {
+          "compatibleVehicles.make": makeRegex,
+          "compatibleVehicles.models.model": modelRegex,
+          "compatibleVehicles.models.years": year,
+        },
+      },
+      // Group back by product _id and reassemble the full document
+      {
+        $group: {
+          _id: "$_id",
+          doc: { $first: "$$ROOT" },
+        },
+      },
+      { $replaceRoot: { newRoot: "$doc" } },
+    ]);
+    if (products.length <=0) {
+      return res.status(404).json({
+        success: false,
+        message: "No products found for this model",
+      });
+    } else {
+      return res.status(200).json({
+        success: true,
+        length: products.length,
+        products,
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching products",
       error: (error as Error).message,
     });
   }
