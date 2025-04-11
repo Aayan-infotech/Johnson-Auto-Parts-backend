@@ -25,7 +25,7 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
       quantity,
       isActive,
       autoPartType,
-      compatibleVehicles, // ✅ now expecting array of { make, models: [{ model, years: [] }] }
+      compatibleVehicles, //array of { make, models: [{ model, years: [] }] }
     } = req.body;
     console.log(compatibleVehicles)
     const productImages = req.fileLocations || [];
