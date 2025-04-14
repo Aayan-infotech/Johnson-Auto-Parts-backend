@@ -9,6 +9,7 @@ import RatingAndReviews from "./RatingAndReviews/RatingAndReviews";
 import cartRoutes from "./Cart/CartRoutes";
 import orderRoutes from "./Order&Payment/OrderRoutes";
 import wishListRoutes from "./wishlist/Wishlist";
+import staticPageRoutes from "./staticPageRoutes"
 
 
 const router = express.Router();
@@ -23,6 +24,7 @@ router.use("/api/RatingAndReviews", RatingAndReviews);
 router.use("/api/orders", orderRoutes);
 router.use("/api/cart",cartRoutes);
 router.use("/api/wishlist",wishListRoutes);
+router.use("/api/static-page", staticPageRoutes);
 
 
 
