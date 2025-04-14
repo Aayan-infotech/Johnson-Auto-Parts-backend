@@ -6,7 +6,8 @@ const router = Router();
 
 
 
-router.post('/admin/create-product', uploadToS3, createProduct);
+
+router.post('/admin/create-product',uploadToS3, createProduct);
 router.get('/getAllProducts', getAllProducts);
 router.get('/getProductById/:id', getProductById);
 router.get('/getProductBySubCategoryOrSubSubCategory/:id', getProductBySubCategoryOrSubSubCategory);
