@@ -25,12 +25,14 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
       quantity,
       isActive,
       autoPartType,
-      compatibleVehicles, // ✅ now expecting array of { make, models: [{ model, years: [] }] }
+      compatibleVehicles, //array of { make, models: [{ model, years: [] }] }
     } = req.body;
-
+    console.log(compatibleVehicles)
     const productImages = req.fileLocations || [];
-
-    if (!name || !description || !price?.actualPrice || !brand) {
+      const newPrice=JSON.stringify(price)
+      const vehicles=JSON.parse(compatibleVehicles)
+      console.log(productImages,"productImages")
+    if (!name || !description  || !brand) {
       return res
         .status(400)
         .json({ success: false, message: "Missing required fields." });
@@ -89,7 +91,7 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
       quantity: quantity ?? 0,
       isActive: isActive ?? true,
       autoPartType: autoPartType || "",
-      compatibleVehicles: compatibleVehicles ?? [], // ✅ Store directly
+      compatibleVehicles: vehicles ?? [], // ✅ Store directly
       salesCount: 0,
     });
 
@@ -432,89 +434,6 @@ export const deleteProduct = async (req: Request, res: Response) => {
     res.status(200).json({ message: "Product deleted successfully" });
   } catch (error) {
     res.status(404).json({ message: "Error deleting product", error });
-  }
-};
-// year model and make type
-export const getProductByQuery = async (req: Request, res: Response) => {
-  try {
-    const { year, make, model, lang } = req.query as {
-      year?: string;
-      make?: string;
-      model?: string;
-      lang?: "en" | "fr";
-    };
-
-    if (!year || !make || !model) {
-      return res.status(400).json({
-        success: false,
-        message: "Year, make, and model are required parameters.",
-      });
-    }
-
-    const products = await Product.find({
-      "compatibleVehicles.year": Number(year),
-      "compatibleVehicles.make": make,
-      "compatibleVehicles.model": model,
-    })
-      .populate("Category", "name")
-      .lean();
-
-    if (!products.length) {
-      return res.status(404).json({
-        success: false,
-        message: "No products found for the given query.",
-      });
-    }
-
-    // Fetch all product IDs
-    const productIds = products.map((product) => product._id);
-
-    // Fetch average ratings for these products
-    const reviews = await Review.aggregate([
-      { $match: { productId: { $in: productIds } } },
-      {
-        $group: {
-          _id: "$productId",
-          avgRating: { $avg: "$rating" },
-        },
-      },
-    ]);
-
-    // Convert to a map for quick lookup
-    const ratingMap = new Map(
-      reviews.map((r) => [r._id.toString(), r.avgRating.toFixed(1)])
-    );
-
-    // Process products with average rating
-    const updatedProducts = products.map((product) => {
-      const actualPrice = product.price?.actualPrice || 0;
-      const discountPercent = product.price?.discountPercent || 0;
-      const discountedPrice =
-        actualPrice - (actualPrice * discountPercent) / 100;
-      const averageRating = ratingMap.get(product._id.toString()) || "0.0"; // Default 0 if no rating
-
-      return {
-        ...product,
-        name: product?.name?.[lang ?? "en"] ?? product.name.en,
-        description:
-          product?.description?.[lang ?? "en"] ?? product.description.en,
-        brand: product?.brand?.[lang ?? "en"] ?? product.brand.en,
-        discountedPrice: parseFloat(discountedPrice.toFixed(2)),
-        averageRating, // Include average rating
-      };
-    });
-
-    res.status(200).json({
-      success: true,
-      message: "Products fetched successfully",
-      products: updatedProducts,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error fetching products",
-      error: (error as Error).message,
-    });
   }
 };
 // products by autopart type
@@ -872,3 +791,42 @@ export const getProductsByYearMakeModel = async (
     });
   }
 };
+
+// popular productss  
+export const getMostSoldProducts = async (req: Request, res: Response) => {
+  try {
+    const mostSold = await Order.aggregate([
+      { $unwind: "$items" },
+      {
+        $group: {
+          _id: "$items.product",
+          totalSold: { $sum: "$items.quantity" },
+        },
+      },
+      { $sort: { totalSold: -1 } },
+      { $limit: 10 }, // You can adjust this number
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id",
+          foreignField: "_id",
+          as: "product",
+        },
+      },
+      { $unwind: "$product" },
+      {
+        $project: {
+          _id: 0,
+          product: 1,
+          totalSold: 1,
+        },
+      },
+    ]);
+
+    res.status(200).json(mostSold);
+  } catch (error) {
+    console.error("Error fetching most sold products:", error);
+    res.status(500).json({ message: "Server error while fetching most sold products" });
+  }
+};
+

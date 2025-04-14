@@ -2,25 +2,22 @@ import { Request, Response } from "express";
 import Order from "../../models/OrderModel";
 import Cart from "../../models/CartModel";
 import Product from "../../models/ProductModel";
+import { processSlimcdPayment } from '../../utills/SlimCDService';
 
 interface AuthRequest extends Request {
   user?: { userId: string; email: string };
 }
 
+
 export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
-    // const userId = req.user?.userId;
-    const userId = "67e3888cdf2552666616a76b";
-    if (!userId)
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+    const userId = req.user?.userId || "67e3888cdf2552666616a76b"; // Temp fallback for testing
+    if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
 
-    const { address, payment } = req.body;
+    const { address, cardDetails } = req.body;
 
-    if (!address || !payment) {
-      return res.status(400).json({
-        success: false,
-        message: "Address and payment details are required",
-      });
+    if (!address || !cardDetails) {
+      return res.status(400).json({ success: false, message: "Address and card details are required" });
     }
 
     const cart = await Cart.findOne({ user: userId }).populate("items.product");
@@ -28,44 +25,52 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ success: false, message: "Cart is empty" });
     }
 
-    const items = cart.items.map((item) => {
+    const items = cart?.items?.map((item) => {
       const product: any = item.product;
       const actualPrice = product?.price?.actualPrice || 0;
       const discountPercent = product?.price?.discountPercent || 0;
       const discountedPrice = actualPrice * (1 - discountPercent / 100);
 
       return {
-        product: product._id,
+        product: product?._id,
         quantity: item.quantity,
         price: discountedPrice,
       };
     });
 
-    const totalAmount = items.reduce(
-      (total, item) => total + item.quantity * item.price,
-      0
-    );
+    const totalAmount = items.reduce((total, item) => total + item.quantity * item.price, 0);
 
+    // 🔐 Call SlimCD to process payment
+    const paymentResult = await processSlimcdPayment({
+      amount: totalAmount,
+      ...cardDetails
+    });
+
+    if (paymentResult.response !== "Success") {
+      return res.status(400).json({ success: false, message: "Payment failed", error: paymentResult.description });
+    }
+
+    // ✅ Save order after payment success
     const order = await Order.create({
       user: userId,
       items,
       totalAmount,
-      status: "pending",
+      status: "paid",
       address,
-      payment,
+      payment: {
+        method: "card",
+        status: "paid",
+        transactionId: paymentResult.transactionId,
+      },
     });
 
     for (const item of cart.items) {
       const product: any = item.product;
       await Product.findByIdAndUpdate(product._id, {
-        $inc: { 
-          quantity: -item.quantity,  
-          salesCount: item.quantity   
-        },
+        $inc: { quantity: -item.quantity, salesCount: item.quantity },
       });
     }
 
-    // Clear user's cart after placing order
     await Cart.findOneAndUpdate({ user: userId }, { items: [] });
 
     return res.status(201).json({
@@ -73,15 +78,13 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       message: "Order placed successfully",
       order,
     });
+
   } catch (error) {
-    console.error("Error placing order:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error placing order",
-      error: error instanceof Error ? error.message : String(error),
-    });
+    console.error("Order creation error:", error);
+    return res.status(500).json({ success: false, message: "Server error", error});
   }
 };
+
 
 
 export const getOrderByUserId = async(req: Request, res: Response) => {

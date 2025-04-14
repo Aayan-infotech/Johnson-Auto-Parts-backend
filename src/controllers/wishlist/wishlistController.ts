@@ -141,7 +141,6 @@ export const removeFromWishlist = async (req: AuthRequest, res: Response) => {
       }
 
       // Remove product from guest session wishlist
-      console.log(req.session.wishlist)
       req.session.wishlist = req.session.wishlist.filter((item) => item.productId !== productId);
       await req.session.save();
 
