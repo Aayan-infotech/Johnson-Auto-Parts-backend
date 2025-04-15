@@ -27,7 +27,7 @@ const OrderSchema = new Schema<IOrder>(
       phoneNumber: { type: String, required: true },
     },
     payment: {
-      method: { type: String, enum: ["credit_card", "paypal", "crypto", "bank_transfer"], required: true },
+      method: { type: String, enum: ["card", "paypal", "crypto", "bank_transfer"], required: true },
       status: { type: String, enum: ["pending", "paid", "failed", "refunded"], default: "pending" },
       transactionId: { type: String, default: null }, // ID from payment provider (Stripe, PayPal, etc.)
     },

@@ -1,69 +1,58 @@
 // services/slimcdService.ts
-import axios from 'axios';
-import { parseStringPromise } from "xml2js";
-const SLIMCD_URL = "https://webservices.slimcd.com/wswebservice/creditcard.asmx"; // ✅ fixed
-const SLIMCD_USERNAME = "R6UT8C6M";
-const SLIMCD_PASSWORD = "iamgroot"; 
+import axios from "axios";
+import dotenv from "dotenv";
 
-interface SlimcdPaymentInput {
+dotenv.config();
+
+interface PaymentData {
   amount: number;
   cardnumber: string;
   expmonth: string;
   expyear: string;
 }
 
-export async function processSlimcdPayment({
-  amount,
-  cardnumber,
-  expmonth,
-  expyear,
-}: SlimcdPaymentInput) {
-  const soapEnvelope = `
-  <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                 xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-                 xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-    <soap:Body>
-      <ProcessCreditCard xmlns="https://www.slimcd.com/webservices/">
-        <username>${SLIMCD_USERNAME}</username>
-        <password>${SLIMCD_PASSWORD}</password>
-        <transtype>SALE</transtype>
-        <amount>${amount.toFixed(2)}</amount>
-        <cardnumber>${cardnumber}</cardnumber>
-        <expmonth>${expmonth}</expmonth>
-        <expyear>${expyear}</expyear>
-        <product>MyProduct</product>
-        <ver>1.0</ver>
-      </ProcessCreditCard>
-    </soap:Body>
-  </soap:Envelope>
-  `;
+export const makePayment = async (paymentData: PaymentData) => {
+  console.log(paymentData, "before sending data");
+  const payload = {
+    username: process.env.SLIMCD_USERNAME || "",
+    password: process.env.SLIMCD_PASSWORD || "",
+    clientid: process.env.SLIMCD_CLIENTID || "",
+    siteid: process.env.SLIMCD_SITEID || "",
+    priceid: process.env.SLIMCD_PRICEID || "",
+    transtype: "SALE",
+    amount: paymentData.amount,
+    cardnumber: paymentData.cardnumber,
+    expmonth: paymentData.expmonth,
+    expyear: paymentData.expyear,
+    invoiceno: `INV-${Date.now()}`,
+    refid: `REF-${Date.now()}`,
+    product: "MyNodeApp",
+    ver: "1.0",
+  };
+  console.log(
+    "🚀 Sending Payload to SlimCD:",
+    JSON.stringify(payload, null, 2)
+  );
 
   try {
-    const { data } = await axios.post(SLIMCD_URL, soapEnvelope, {
-      headers: {
-        'Content-Type': 'text/xml; charset=utf-8',
-        'SOAPAction': 'https://www.slimcd.com/webservices/ProcessCreditCard',
-      },
-    });
+    const response = await axios.post(
+      process.env.SLIMCD_API_URL || "",
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        timeout: 60000,
+      }
+    );
+    console.log(
+      "🧾 Response from SlimCD:",
+      response.data
+    );
 
-    const result = await parseStringPromise(data);
-
-    const rawString =
-      result?.["soap:Envelope"]?.["soap:Body"]?.[0]?.["ProcessCreditCardResponse"]?.[0]
-        ?.["ProcessCreditCardResult"]?.[0];
-
-    if (!rawString) throw new Error("Invalid SlimCD response");
-
-    const [responseCode, description, authCode, transactionId] = rawString.split("|");
-
-    return {
-      response: responseCode,
-      description,
-      authCode,
-      transactionId,
-    };
-  } catch (error: any) {
-    console.error("SlimCD error:", error?.response?.data || error.message);
-    throw new Error("Payment processing failed.");
+    return response.data;
+  } catch (err: any) {
+    console.log("SlimCD payment error:", err);
+    throw new Error("Payment failed");
   }
-}
+};
