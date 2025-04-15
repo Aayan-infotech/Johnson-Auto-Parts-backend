@@ -7,7 +7,7 @@ import {
 
 const router = Router();
 
-router.get("/get/:key", getStaticPage);
-router.put("/update/:key", updateStaticPage);
+router.get("/get/:slug", getStaticPage);
+router.post("/update/:key", updateStaticPage);
 
 export default router;
