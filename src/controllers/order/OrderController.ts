@@ -8,36 +8,6 @@ interface AuthRequest extends Request {
   user?: { userId: string; email: string };
 }
 
-// export const createOrder = async (req: AuthRequest, res: Response) => {
-//   try {
-//     const { cardnumber, expmonth, expyear } = req.body;
-
-//     try {
-//       const paymentResult = await makePayment({
-//         amount: 12.1,
-//         cardnumber,
-//         expmonth,
-//         expyear,
-//       });
-//     } catch (error) {
-//       console.log(error);
-//       return res.status(500).json({
-//         success: false,
-//         message: "error making payment",
-//       });
-//     }
-
-//     return res.status(201).json({
-//       success: true,
-//       message: "Order placed successfully",
-//     });
-//   } catch (error) {
-//     console.error("Order creation error:", error);
-//     return res
-//       .status(500)
-//       .json({ success: false, message: "Server error", error });
-//   }
-// };
 
 export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
