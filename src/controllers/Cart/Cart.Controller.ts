@@ -133,11 +133,12 @@ export const getCart = async (req: AuthRequest, res: Response) => {
 export const updateCart = async (req: AuthRequest, res: Response) => {
   try {
     const { productId, quantity } = req.body;
+    const token=req.headers.authorization;
     const user = await extractUserFromToken(req.headers.authorization);
     req.user = user || undefined;
 
     if (req.user) {
-      const existingUser = await User.findOne({ userId: req.user.userId });
+      const existingUser = await User.findOne({ _id: req.user.userId });
       if (!existingUser) {
         return res.status(404).json({ success: false, message: "User not found" });
       }

@@ -828,5 +828,34 @@ export const getMostSoldProducts = async (req: Request, res: Response) => {
     console.error("Error fetching most sold products:", error);
     res.status(500).json({ message: "Server error while fetching most sold products" });
   }
+};  
+
+export const searchProductsforService = async (req: Request, res: Response) => {
+  try {
+    const keyword = req.query.service?.toString();
+
+    if (!keyword || keyword.trim() === "") {
+      return res.status(400).json({ message: "Keyword is required" });
+    }
+
+    const regex = new RegExp(keyword.trim(), "i"); // case-insensitive, partial match
+
+    const products = await Product.find({
+      isActive: true,
+      $or: [
+        { "name.en": regex },
+        { "name.fr": regex },
+        { "description.en": regex },
+        { "description.fr": regex },
+        { "autoPartType": regex }
+      ]
+    });
+
+    res.status(200).json(products);
+  } catch (error) {
+    console.error("Keyword search error:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 };
+
 
