@@ -3,6 +3,7 @@ import Category from "../models/Category";
 import Subcategory from "../models/Subcategory";
 import SubSubcategory from "../models/SubSubcategory";
 import { translateText } from '../utills/translateService';
+import mongoose from "mongoose";
 
 
 const insertsubSubcategory = async (req: Request, res: Response) => {
@@ -51,7 +52,8 @@ const getSubSubcategoryBySubcategoryId = async (req: Request, res: Response) => 
     try {
       const { lang } = req.query as { lang?: string };
       const subcategoryId = req.params.subcategoryId;
-      const subsubcategories = await SubSubcategory.find({isActive: true, subcategoryId: subcategoryId});
+      const objectId = new mongoose.Types.ObjectId(subcategoryId);
+      const subsubcategories = await SubSubcategory.find({isActive: true, subcategoryId: objectId});
   
       const translatedSubSubcategories = subsubcategories.map((cat) => ({
         id: cat._id,

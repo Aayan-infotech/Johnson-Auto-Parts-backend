@@ -27,7 +27,6 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
       autoPartType,
       compatibleVehicles, //array of { make, models: [{ model, years: [] }] }
     } = req.body;
-    console.log(compatibleVehicles);
     const productImages = req.fileLocations || [];
     const vehicles = JSON.parse(compatibleVehicles);
     if (!name || !description || !brand) {
