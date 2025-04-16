@@ -58,7 +58,6 @@ const getSubSubcategoryBySubcategoryId = async (req: Request, res: Response) => 
         name: cat.name[lang as keyof typeof cat.name] || cat.name.en,
         categoryId: cat.categoryId,
         subcategoryId: cat.subcategoryId,
-        subsubcategoryId: cat.subsubcategoryId,
       }));
   
       res.status(200).json({
@@ -141,7 +140,7 @@ const activeBlockSubSubcategory = async(req: Request, res: Response) => {
     try{
         const id = req.params.id;
 
-        const subsubcategory = await SubSubcategory.findOne({subsubcategoryId: id});
+        const subsubcategory = await SubSubcategory.findOne({_id: id});
         if(!subsubcategory){
             return res.status(404).json({
                 success: false,

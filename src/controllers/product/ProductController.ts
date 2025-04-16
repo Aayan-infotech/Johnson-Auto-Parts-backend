@@ -27,12 +27,10 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
       autoPartType,
       compatibleVehicles, //array of { make, models: [{ model, years: [] }] }
     } = req.body;
-    console.log(compatibleVehicles)
+    console.log(compatibleVehicles);
     const productImages = req.fileLocations || [];
-      const newPrice=JSON.stringify(price)
-      const vehicles=JSON.parse(compatibleVehicles)
-      console.log(productImages,"productImages")
-    if (!name || !description  || !brand) {
+    const vehicles = JSON.parse(compatibleVehicles);
+    if (!name || !description || !brand) {
       return res
         .status(400)
         .json({ success: false, message: "Missing required fields." });
@@ -771,7 +769,7 @@ export const getProductsByYearMakeModel = async (
       },
       { $replaceRoot: { newRoot: "$doc" } },
     ]);
-    if (products.length <=0) {
+    if (products.length <= 0) {
       return res.status(404).json({
         success: false,
         message: "No products found for this model",
@@ -792,7 +790,7 @@ export const getProductsByYearMakeModel = async (
   }
 };
 
-// popular productss  
+// popular productss
 export const getMostSoldProducts = async (req: Request, res: Response) => {
   try {
     const mostSold = await Order.aggregate([
@@ -826,9 +824,11 @@ export const getMostSoldProducts = async (req: Request, res: Response) => {
     res.status(200).json(mostSold);
   } catch (error) {
     console.error("Error fetching most sold products:", error);
-    res.status(500).json({ message: "Server error while fetching most sold products" });
+    res
+      .status(500)
+      .json({ message: "Server error while fetching most sold products" });
   }
-};  
+};
 
 export const searchProductsforService = async (req: Request, res: Response) => {
   try {
@@ -847,8 +847,8 @@ export const searchProductsforService = async (req: Request, res: Response) => {
         { "name.fr": regex },
         { "description.en": regex },
         { "description.fr": regex },
-        { "autoPartType": regex }
-      ]
+        { autoPartType: regex },
+      ],
     });
 
     res.status(200).json(products);
@@ -857,5 +857,3 @@ export const searchProductsforService = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
-

@@ -4,12 +4,6 @@ import { ICategory } from "./interfaces/ICategory";
 
 const CategorySchema = new Schema<ICategory>(
     {
-        categoryId: {
-            type: String,
-            required: true,
-            unique: true,
-            default: () => `cat-${uuidv4().split('-')[0]}`
-        },
         name: {
             en: { type: String, required: true },
             fr: { type: String },

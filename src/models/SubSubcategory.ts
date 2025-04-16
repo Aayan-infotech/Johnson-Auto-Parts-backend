@@ -3,12 +3,6 @@ import {v4 as uuidv4} from "uuid";
 import {ISubSubcategory} from "./interfaces/ISubSubcategory";
 
 const SubSubcategorySchema = new Schema<ISubSubcategory>({
-    subsubcategoryId: {
-        type: String,
-        required: true,
-        unique: true,
-        default: () => `subsubcat-${uuidv4()}`
-    },
     name: {
         en: {
             type: String,
