@@ -42,27 +42,6 @@ const insertCategory = async (req: Request, res: Response) => {
     }
 };
 
-// to get category
-// const getCategories = async (req: Request, res: Response) => {
-//     try{
-//         const categories = await Category.find();
-
-//         res.status(200).json({
-//             success: true,
-//             status: 200,
-//             message: "Categories fetched successfully!",
-//             data: categories
-//         });
-//     }
-//     catch(error){
-//         return res.status(404).json({
-//             success: false,
-//             status: 404,
-//             message: "Inernal server error!",
-//             error: error
-//         });
-//     }
-// };
 const getCategories = async (req: Request, res: Response) => {
     try {
       const { lang } = req.query as { lang?: string };
@@ -71,7 +50,7 @@ const getCategories = async (req: Request, res: Response) => {
       const translatedCategories = categories.map((cat) => ({
         id: cat._id,
         name: cat.name[lang as keyof typeof cat.name] || cat.name.en,
-        categoryId: cat.categoryId
+       
       }));
   
       res.status(200).json({
@@ -91,7 +70,7 @@ const deleteCategory = async(req: Request, res: Response) => {
     try{
         const categoryId = req.params.categoryId;
 
-        const category = await Category.findOneAndDelete({categoryId});
+        const category = await Category.findByIdAndDelete(categoryId);
 
         // Delete the subcategories also
         await Subcategory.deleteMany({ categoryId });   
@@ -134,7 +113,7 @@ const updateCategory = async(req: Request, res: Response) => {
         const categoryId = req.params.categoryId;
         const name = req.body.name
 
-        const category = await Category.findOne({categoryId});
+        const category = await Category.findOne({_id:categoryId});
         if(!category){
             return res.status(404).json({
                 success: false,
@@ -170,7 +149,7 @@ const activeBlockCategory = async(req: Request, res: Response) => {
     try{
         const { id } = req.params
 
-        const category = await Category.findOne({categoryId: id});
+        const category = await Category.findOne({_id: id});
 
         if(!category){
             return res.status(404).json({

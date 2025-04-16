@@ -63,7 +63,6 @@ const getSubcategoryByCategory = async (req: Request, res: Response) => {
             id: cat._id,
             name: cat.name[lang as keyof typeof cat.name] || cat.name.en,
             categoryId: cat.categoryId,
-            subcategoryId: cat.subcategoryId,
         }))
         if(subcategories.length === 0){
             return res.status(200).json({
@@ -96,7 +95,7 @@ const deleteSubcategory = async (req: Request, res: Response) => {
     try {
         const id = req.params.id;
 
-        const subcategory = await Subcategory.findOneAndDelete({ subcategoryId: id });
+        const subcategory = await Subcategory.findOneAndDelete({ _id: id });
         if (!subcategory) {
             return res.status(404).json({
                 success: false,
@@ -163,7 +162,7 @@ const activateDeactivateSubcategory = async(req: Request, res: Response) => {
     try{
         const id = req.params.id;
 
-        const subcategory = await Subcategory.findOne({subcategoryId: id});
+        const subcategory = await Subcategory.findOne({_id: id});
 
         if(!subcategory){
             return res.status(404).json({
