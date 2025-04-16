@@ -167,10 +167,42 @@ const activeBlockSubSubcategory = async(req: Request, res: Response) => {
         });
     }
 }
+const deleteSubSubcategory = async(req: Request, res: Response) => {
+    try{
+        const id = req.params.id;
+
+        const subsubcategory = await SubSubcategory.findOne({_id: id});
+        if(!subsubcategory){
+            return res.status(404).json({
+                success: false,
+                status: 404,
+                message: "Subsubcategory not found!"
+            })
+        }
+
+        subsubcategory.isActive = !subsubcategory.isActive;
+        await subsubcategory.save();
+
+        res.status(200).json({
+            success: true,
+            status: 200,
+            message: `Subsubcategory ${subsubcategory.isActive ? "Activated" : "Deactivated"} successfully!`
+        });
+    }
+    catch(error){
+        return res.status(404).json({
+            success: false,
+            status: 404,
+            message: "Internal server error!",
+            error: error
+        });
+    }
+}
 
 export {
     insertsubSubcategory,
     getSubSubcategoryBySubcategoryId,
     getAllSubSubcategories,
+    deleteSubSubcategory,
     activeBlockSubSubcategory
 }

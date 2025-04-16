@@ -104,11 +104,6 @@ const deleteSubcategory = async (req: Request, res: Response) => {
             });
         }
 
-        // delete subsubcategories
-        // await SubSubcategory.deleteMany({ id });
-
-        // delete products
-        // await Product.deleteMany({ id });
 
         res.status(200).json({
             success: false,
