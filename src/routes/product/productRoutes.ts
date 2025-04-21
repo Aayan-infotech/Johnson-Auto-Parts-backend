@@ -20,7 +20,7 @@ router.get('/year', getYears);
 router.get('/make', getMakesByYear);
 router.get('/model', getModelsByYearAndMake);
 router.get('/popular-products', getMostSoldProducts);
-router.get('/service-products', searchProductsforService);
+router.get('/service-products/:serviceId', searchProductsforService);
 
 
 export default router;
