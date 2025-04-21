@@ -63,7 +63,7 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
     );
     console.log(totalAmount)
 
-    // ************ issue with th epaymen tif the payment amount digits exceeds 3 digits it is not processed by bank 
+    // ***** issue with th epaymen tif the payment amount digits exceeds 3 digits it is not processed by bank 
     const paymentResult = await makePayment({
       amount: 100,
       cardnumber,expmonth,expyear
@@ -93,7 +93,6 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // 🧹 Clear cart only if cart was used
     if (!productId) {
       await Cart.findOneAndUpdate({ user: userId }, { items: [] });
     }
@@ -112,8 +111,10 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
 export const getOrderByUserId = async (req: Request, res: Response) => {
   try {
     const userId = req.params.userId;
-
-    const orders = await Order.find({ user: userId });
+    const orders = await Order.find({ user: userId }).populate({
+      path: "items.product",
+      select: "name price picture", 
+    });    
 
     if (orders.length === 0) {
       return res.status(200).json({

@@ -544,9 +544,16 @@ export const getFilteredProducts = async (req: AuthRequest, res: Response) => {
       products = await Product.find({ _id: { $in: productIds } })
         .populate("Category", "name")
         .lean();
+    } else if (filter === "Replacement Parts") {
+      // Return products with valid regularServiceCategory
+      products = await Product.find({
+        regularServiceCategory: { $ne: null },
+      })
+        .populate("Category", "name")
+        .lean();
     } else {
+      // Keyword based filters
       const filterMap: Record<string, string[]> = {
-        "Replacement Parts": ["brake", "brakes", "clutch", "pads", "break pad"],
         Lighting: [
           "light",
           "lights",
@@ -565,9 +572,10 @@ export const getFilteredProducts = async (req: AuthRequest, res: Response) => {
         });
       }
 
+      const keywords = filterMap[filter];
       const filterQuery = {
         autoPartType: {
-          $in: filterMap[filter].map((type) => new RegExp(`^${type}$`, "i")),
+          $in: keywords.map((type) => new RegExp(`^${type}$`, "i")),
         },
       };
 
@@ -602,7 +610,7 @@ export const getFilteredProducts = async (req: AuthRequest, res: Response) => {
     res.status(200).json({
       success: true,
       message: "Filtered products fetched successfully",
-      length: products.length,
+      length: updatedProducts.length,
       products: updatedProducts,
     });
   } catch (error) {
