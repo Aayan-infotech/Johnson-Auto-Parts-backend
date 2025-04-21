@@ -17,6 +17,7 @@ export interface IProduct extends Document {
   quality: string;
   quantity: number;
   isActive: boolean;
+  regularServiceCategory?: Types.ObjectId | null;
   autoPartType: string; // brake, clutch, brake shoe, etc.
 
   // ✅ Updated structure

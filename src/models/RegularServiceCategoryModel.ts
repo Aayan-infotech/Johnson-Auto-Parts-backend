@@ -1,26 +1,29 @@
 import mongoose, { Schema } from "mongoose";
-import { v4 as uuidv4 } from "uuid";
 import { IRegularServiceCategory } from "./interfaces/IRegularServiceCategory";
 
-const RegualarServiceSchema = new Schema<IRegularServiceCategory>(
+const RegularServiceSchema = new Schema<IRegularServiceCategory>(
   {
     name: {
-      type: String,
+      en: { type: String, required: true },
+      fr: { type: String, required: true },
+    },
+    description: {
+      en: { type: String, default: "" },
+      fr: { type: String, default: "" },
     },
     image: {
       type: String,
-    },
-    description: {
-      type: String,
+      default: null,
     },
     categoryDiscount: {
       type: Number,
+      default: 0,
     },
   },
   { timestamps: true }
 );
 
 export default mongoose.model<IRegularServiceCategory>(
-  "RegualarService",
-  RegualarServiceSchema
+  "RegularService",
+  RegularServiceSchema
 );
