@@ -22,7 +22,7 @@ const ProductSchema = new Schema<IProduct>(
     quality: { type: String },
     quantity: { type: Number, required: true, default: 0 },
     isActive: { type: Boolean, required: true, default: true },
-
+    regularServiceCategory: { type: Schema.Types.ObjectId,ref: "RegularService" },
     autoPartType: { type: String }, // brake, clutch, brake shoe etc
 
     // ✅ New structure for Year > Make > Model
