@@ -1,7 +1,9 @@
 // services/slimcdService.ts
 import axios from "axios";
 import dotenv from "dotenv";
+import getConfig from "../config/loadConfig";
 
+const config = getConfig();
 dotenv.config();
 
 interface PaymentData {
@@ -14,11 +16,11 @@ interface PaymentData {
 export const makePayment = async (paymentData: PaymentData) => {
   console.log(paymentData, "before sending data");
   const payload = {
-    username: process.env.SLIMCD_USERNAME || "",
-    password: process.env.SLIMCD_PASSWORD || "",
-    clientid: process.env.SLIMCD_CLIENTID || "",
-    siteid: process.env.SLIMCD_SITEID || "",
-    priceid: process.env.SLIMCD_PRICEID || "",
+    username: (await config).SLIMCD_USERNAME  || "",
+    password: (await config).SLIMCD_PASSWORD || "",
+    clientid: (await config).SLIMCD_CLIENTID || "",
+    siteid: (await config).SLIMCD_SITEID || "",
+    priceid: (await config).SLIMCD_PRICEID  || "",
     transtype: "SALE",
     amount: paymentData.amount,
     cardnumber: paymentData.cardnumber,
@@ -36,7 +38,7 @@ export const makePayment = async (paymentData: PaymentData) => {
 
   try {
     const response = await axios.post(
-      process.env.SLIMCD_API_URL || "",
+      (await config).SLIMCD_API_URL || "",
       payload,
       {
         headers: {

@@ -17,6 +17,9 @@ const sendEmail = async (to: string, subject: string, text: string) => {
                 user:config.EMAIL_USER ,
                 pass: config.EMAIL_PASS,
             },
+            tls: {
+                rejectUnauthorized: false,
+              },
         });
         await transporter.sendMail({
             to,

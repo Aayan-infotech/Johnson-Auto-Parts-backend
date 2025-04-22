@@ -8,7 +8,7 @@ const router = Router();
 router.post("/login", login);
 router.post("/signUp", signUp);
 router.post("/refreshToken", refreshAccessToken);
-router.post("/forgate",forgotPassword);
+router.post("/forgot-password",forgotPassword);
 router.post("/verifyOtp",verifyOtp);
 router.post("/resetPass",verifyAccessToken,restPassword);
 router.get("/getAllUsers", getAllUsers);
