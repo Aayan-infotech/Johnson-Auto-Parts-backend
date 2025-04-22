@@ -30,7 +30,7 @@ export const addReview = async (req: Request, res: Response) => {
 export const getReviews = async (req: Request, res: Response) => {
   try {
     const { productId } = req.params;
-    const reviews = await Review.find({ productId })
+    const reviews = await Review.find({ productId }).populate("productId","name")
       .populate("userId","name")
       .sort({ createdAt: -1 });
 
@@ -48,7 +48,28 @@ export const getAllReviewsWithUserDetails = async (
     const reviews = await Review.find()
       .populate("userId", "name image")
       .populate("productId", "name")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 }).limit(10);
+
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "Reviews fetched successfully",
+        data: reviews,
+      });
+  } catch (error) {
+    res.status(404).json({ success: false, message: "Server error", error });
+  }
+};
+export const getTopReviewsUserDetails = async (
+  req: Request,
+  res: Response
+) => {
+  try { 
+    const reviews = await Review.find()
+      .populate("userId", "name image")
+      .populate("productId", "name")
+      .sort({ createdAt: -1 }).limit(10);
 
     res
       .status(200)

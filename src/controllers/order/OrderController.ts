@@ -1,32 +1,42 @@
 import { Request, Response } from "express";
 import Order from "../../models/OrderModel";
+import User from "../../models/User";
 import Cart from "../../models/CartModel";
 import Product from "../../models/ProductModel";
 import { makePayment } from "../../utills/SlimCDService";
+import { sendOrderConfirmationEmail } from "../../utills/SendOrderCreationEmail";
 
 interface AuthRequest extends Request {
   user?: { userId: string; email: string };
 }
 
-
 export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.userId || "67e3888cdf2552666616a76b"; // Temp fallback
-    if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
+    const userId = req.user?.userId || "67fcd7faa570b707b9d9a1f3"; // Temp fallback
 
-    const { address, productId, quantity,cardnumber,expmonth,expyear } = req.body;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
 
-    if (!address||!cardnumber) {
-      return res.status(400).json({ success: false, message: "Address and card details are required" });
+    const { address, productId, quantity, cardnumber, expmonth, expyear } =
+      req.body;
+
+    if (!address || !cardnumber) {
+      return res.status(400).json({
+        success: false,
+        message: "Address and card details are required",
+      });
     }
 
     let items = [];
 
     if (productId && quantity) {
-      // 🛒 Direct Buy flow
       const product = await Product.findById(productId);
       if (!product || product.quantity < quantity) {
-        return res.status(400).json({ success: false, message: "Product not available or insufficient quantity" });
+        return res.status(400).json({
+          success: false,
+          message: "Product not available or insufficient quantity",
+        });
       }
 
       const actualPrice = product.price?.actualPrice || 0;
@@ -39,10 +49,13 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
         price: discountedPrice,
       });
     } else {
-      // 🛒 Cart checkout flow
-      const cart = await Cart.findOne({ user: userId }).populate("items.product");
+      const cart = await Cart.findOne({ user: userId }).populate(
+        "items.product"
+      );
       if (!cart || cart.items.length === 0) {
-        return res.status(400).json({ success: false, message: "Cart is empty" });
+        return res
+          .status(400)
+          .json({ success: false, message: "Cart is empty" });
       }
 
       items = cart.items.map((item) => {
@@ -58,19 +71,26 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
         };
       });
     }
-    const totalAmount = Number(
-      items.reduce((total, item) => total + item.quantity * item.price, 0).toFixed(2)
-    );
-    console.log(totalAmount)
 
-    // ***** issue with th epaymen tif the payment amount digits exceeds 3 digits it is not processed by bank 
+    const totalAmount = Number(
+      items
+        .reduce((total, item) => total + item.quantity * item.price, 0)
+        .toFixed(2)
+    );
+
     const paymentResult = await makePayment({
-      amount: 100,
-      cardnumber,expmonth,expyear
+      amount: totalAmount /**temporary amount can be used to test this */,
+      cardnumber,
+      expmonth,
+      expyear,
     });
 
     if (paymentResult.reply.response !== "Success") {
-      return res.status(400).json({ success: false, message: "Payment failed", error: paymentResult.description });
+      return res.status(400).json({
+        success: false,
+        message: "Payment failed",
+        error: paymentResult.description,
+      });
     }
 
     const order = await Order.create({
@@ -86,7 +106,6 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    // 🧾 Update product quantities
     for (const item of items) {
       await Product.findByIdAndUpdate(item.product, {
         $inc: { quantity: -item.quantity, salesCount: item.quantity },
@@ -97,6 +116,35 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       await Cart.findOneAndUpdate({ user: userId }, { items: [] });
     }
 
+    const user = await User.findById(userId);
+
+    if (user?.email) {
+      try {
+        const populatedItems = await Promise.all(
+          items.map(async (item) => {
+            const product = await Product.findById(item.product).lean();
+            return {
+              ...item,
+              product,
+            };
+          })
+        );
+
+        await sendOrderConfirmationEmail({
+          user: {
+            name: user.name,
+            email: user.email,
+          },
+          address,
+          order,
+          items: populatedItems,
+          totalAmount,
+        });
+      } catch (emailErr) {
+        console.error("Email sending failed:", emailErr);
+      }
+    }
+
     return res.status(201).json({
       success: true,
       message: "Order placed successfully",
@@ -104,7 +152,11 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
     });
   } catch (error) {
     console.error("Order creation error:", error);
-    return res.status(500).json({ success: false, message: "Server error", error });
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error,
+    });
   }
 };
 
@@ -113,8 +165,8 @@ export const getOrderByUserId = async (req: Request, res: Response) => {
     const userId = req.params.userId;
     const orders = await Order.find({ user: userId }).populate({
       path: "items.product",
-      select: "name price picture", 
-    });    
+      select: "name price picture",
+    });
 
     if (orders.length === 0) {
       return res.status(200).json({
