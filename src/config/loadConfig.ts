@@ -29,7 +29,6 @@ interface Config {
 async function getConfig(): Promise<Config> {
   if (ENV === "production") {
     try {
-      console.log(111);
       const command = new GetSecretValueCommand({
         SecretId: "john4",
       });
