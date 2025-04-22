@@ -2,59 +2,62 @@
 import axios from "axios";
 import dotenv from "dotenv";
 import getConfig from "../config/loadConfig";
+import Payment from "../models/PaymentModel";
+import { PaymentData, PaymentRecord } from "../models/interfaces/IPayment";
 
-const config = getConfig();
 dotenv.config();
 
-interface PaymentData {
-  amount: number;
-  cardnumber: string;
-  expmonth: string;
-  expyear: string;
-}
+export const makePayment = async (
+  paymentData: PaymentData,
+  userId?: string
+): Promise<any> => {
+  const configData = await getConfig();
+  const invoiceno = `INV-${Date.now()}`;
+  const refid = `REF-${Date.now()}`;
 
-export const makePayment = async (paymentData: PaymentData) => {
-  console.log(paymentData, "before sending data");
   const payload = {
-    username: (await config).SLIMCD_USERNAME  || "",
-    password: (await config).SLIMCD_PASSWORD || "",
-    clientid: (await config).SLIMCD_CLIENTID || "",
-    siteid: (await config).SLIMCD_SITEID || "",
-    priceid: (await config).SLIMCD_PRICEID  || "",
+    username: configData.SLIMCD_USERNAME,
+    password: configData.SLIMCD_PASSWORD,
+    clientid: configData.SLIMCD_CLIENTID,
+    siteid: configData.SLIMCD_SITEID,
+    priceid: configData.SLIMCD_PRICEID,
     transtype: "SALE",
     amount: paymentData.amount,
     cardnumber: paymentData.cardnumber,
     expmonth: paymentData.expmonth,
     expyear: paymentData.expyear,
-    invoiceno: `INV-${Date.now()}`,
-    refid: `REF-${Date.now()}`,
+    invoiceno,
+    refid,
     product: "MyNodeApp",
     ver: "1.0",
   };
-  console.log(
-    "🚀 Sending Payload to SlimCD:",
-    JSON.stringify(payload, null, 2)
-  );
 
   try {
     const response = await axios.post(
-      (await config).SLIMCD_API_URL || "",
+      configData.SLIMCD_API_URL,
       payload,
       {
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         timeout: 60000,
       }
     );
-    console.log(
-      "🧾 Response from SlimCD:",
-      response.data
-    );
+      console.log(response,"response in slim cd")
+    const paymentRecord: PaymentRecord = {
+      userId,
+      amount: paymentData.amount,
+      cardLast4: paymentData.cardnumber.slice(-4),
+      invoiceno,
+      refid,
+      product: "MyNodeApp",
+      status: response.data.reply.response || "UNKNOWN",
+      slimcdResponse: response.data,
+    };
+
+    await Payment.create(paymentRecord);
 
     return response.data;
   } catch (err: any) {
-    console.log("SlimCD payment error:", err);
+    console.error("SlimCD payment error:", err);
     throw new Error("Payment failed");
   }
 };
