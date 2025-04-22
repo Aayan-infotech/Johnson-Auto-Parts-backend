@@ -185,12 +185,13 @@ const verifyOtp = async (req: Request, res: Response) => {
     userData.otp = undefined;
     userData.otpExpiry = undefined;
     await userData.save();
+    console.log(userData)
 
-    const resetToken = generateResetToken(userData.userId);
+    // const resetToken = generateResetToken(userData.userId);
     return res.status(200).json({
       message: "OTP verified successfully",
       status: 200,
-      resetToken: resetToken,
+      resetToken: userData.refreshToken,
     });
   } catch (error) {
     return res.status(404).json({

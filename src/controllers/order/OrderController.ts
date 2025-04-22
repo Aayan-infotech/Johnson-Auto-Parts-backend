@@ -12,7 +12,7 @@ interface AuthRequest extends Request {
 
 export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.userId || "67fcd7faa570b707b9d9a1f3"; // Temp fallback
+    const userId = req.user?.userId ; // Temp fallback
 
     if (!userId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });

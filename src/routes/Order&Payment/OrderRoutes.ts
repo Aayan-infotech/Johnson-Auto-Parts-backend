@@ -10,7 +10,7 @@ import { verifyAccessToken } from "../../middleware/authMiddleware";
 
 const router = Router();
 
-router.post("/create-order", createOrder);
+router.post("/create-order",verifyAccessToken, createOrder);
 router.get("/user/get-orders/:userId", getOrderByUserId);
 
 // admin
