@@ -11,6 +11,8 @@ import orderRoutes from "./Order&Payment/OrderRoutes";
 import wishListRoutes from "./wishlist/Wishlist";
 import staticPageRoutes from "./staticPageRoutes"
 import regualrServiceRoutes from "./regualrServiceRoutes"
+import companyRoutes from "./OEM&AfterMarket/Company.routes"
+import modelRoutes from "./OEM&AfterMarket/Models.Routes"
 
 
 const router = express.Router();
@@ -27,6 +29,8 @@ router.use("/api/cart",cartRoutes);
 router.use("/api/wishlist",wishListRoutes);
 router.use("/api/static-page", staticPageRoutes);
 router.use("/api/regular-services", regualrServiceRoutes);
+router.use("/api/companies", companyRoutes);
+router.use("/api/models", modelRoutes);
 
 
 

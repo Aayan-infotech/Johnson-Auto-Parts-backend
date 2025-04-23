@@ -848,14 +848,65 @@ export const searchProductsforService = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid ID format" });
     }
 
-    const products = await Product.find({regularServiceCategory:id});
-      if(products.length==0){
-        return res.status(404).json({message:"No Products found for the Selected Service Type"})
-      }
+    const products = await Product.find({ regularServiceCategory: id });
+    if (products.length == 0) {
+      return res
+        .status(404)
+        .json({ message: "No Products found for the Selected Service Type" });
+    }
     res.status(200).json({ message: "Products Fetched", products });
   } catch (error) {
     console.error("Product search error:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+export const productsOfModel = async (req: Request, res: Response) => {
+  const { modelName, lang } = req.query;
+
+  try {
+    if (!modelName || typeof modelName !== "string") {
+      return res
+        .status(400)
+        .json({ error: "modelName query parameter is required" });
+    }
+
+    // Restrict to "en" or "fr", default to "en"
+    const language = typeof lang === "string" && (lang === "en" || lang === "fr") ? lang : "en";
+
+    const products = await Product.find({
+      compatibleVehicles: {
+        $elemMatch: {
+          models: {
+            $elemMatch: {
+              model: { $regex: new RegExp(modelName, "i") }, // case-insensitive match
+            },
+          },
+        },
+      },
+    });
+
+    const localizedProducts = products.map(product => {
+      const nameObj = product.name as Record<string, string>;
+      const descObj = product.description as Record<string, string>;
+
+      return {
+        ...product.toObject(),
+        name: nameObj[language] || nameObj["en"],
+        description: descObj[language] || descObj["en"],
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Product of Model Fetched Successfully",
+      products: localizedProducts,
+    });
+  } catch (error) {
+    console.error("Error fetching products by model:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
 
