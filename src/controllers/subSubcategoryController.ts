@@ -3,6 +3,7 @@ import Category from "../models/Category";
 import Subcategory from "../models/Subcategory";
 import SubSubcategory from "../models/SubSubcategory";
 import { translateText } from '../utills/translateService';
+import mongoose from "mongoose";
 
 
 const insertsubSubcategory = async (req: Request, res: Response) => {
@@ -51,14 +52,14 @@ const getSubSubcategoryBySubcategoryId = async (req: Request, res: Response) => 
     try {
       const { lang } = req.query as { lang?: string };
       const subcategoryId = req.params.subcategoryId;
-      const subsubcategories = await SubSubcategory.find({isActive: true, subcategoryId: subcategoryId});
+      const objectId = new mongoose.Types.ObjectId(subcategoryId);
+      const subsubcategories = await SubSubcategory.find({isActive: true, subcategoryId: objectId});
   
       const translatedSubSubcategories = subsubcategories.map((cat) => ({
         id: cat._id,
         name: cat.name[lang as keyof typeof cat.name] || cat.name.en,
         categoryId: cat.categoryId,
         subcategoryId: cat.subcategoryId,
-        subsubcategoryId: cat.subsubcategoryId,
       }));
   
       res.status(200).json({
@@ -141,7 +142,38 @@ const activeBlockSubSubcategory = async(req: Request, res: Response) => {
     try{
         const id = req.params.id;
 
-        const subsubcategory = await SubSubcategory.findOne({subsubcategoryId: id});
+        const subsubcategory = await SubSubcategory.findOne({_id: id});
+        if(!subsubcategory){
+            return res.status(404).json({
+                success: false,
+                status: 404,
+                message: "Subsubcategory not found!"
+            })
+        }
+
+        subsubcategory.isActive = !subsubcategory.isActive;
+        await subsubcategory.save();
+
+        res.status(200).json({
+            success: true,
+            status: 200,
+            message: `Subsubcategory ${subsubcategory.isActive ? "Activated" : "Deactivated"} successfully!`
+        });
+    }
+    catch(error){
+        return res.status(404).json({
+            success: false,
+            status: 404,
+            message: "Internal server error!",
+            error: error
+        });
+    }
+}
+const deleteSubSubcategory = async(req: Request, res: Response) => {
+    try{
+        const id = req.params.id;
+
+        const subsubcategory = await SubSubcategory.findOne({_id: id});
         if(!subsubcategory){
             return res.status(404).json({
                 success: false,
@@ -173,5 +205,6 @@ export {
     insertsubSubcategory,
     getSubSubcategoryBySubcategoryId,
     getAllSubSubcategories,
+    deleteSubSubcategory,
     activeBlockSubSubcategory
 }

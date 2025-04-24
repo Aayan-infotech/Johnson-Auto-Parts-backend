@@ -4,12 +4,7 @@ import { ISubcategory } from "./interfaces/ISubcategory";
 
 const SubcategorySchema = new Schema<ISubcategory>(
     {
-        subcategoryId: {
-            type: String,
-            required: true,
-            unique: true,
-            default: () => `subcat-${uuidv4().split('-')[0]}`
-        },
+       
         name: {
             en: { type: String, required: true, unique: true },
             fr: { type: String },

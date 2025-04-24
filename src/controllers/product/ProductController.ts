@@ -6,6 +6,7 @@ import SubSubcategory from "../../models/SubSubcategory";
 import Review from "../../models/RatingAndReviews";
 import Order from "../../models/OrderModel";
 import { translateText } from "../../utills/translateService";
+import mongoose from "mongoose";
 interface AuthRequest extends Request {
   user?: { userId: string; email: string };
   fileLocations?: string[]; // Adjust the type as needed
@@ -25,14 +26,12 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
       quantity,
       isActive,
       autoPartType,
+      regularServiceCategory,
       compatibleVehicles, //array of { make, models: [{ model, years: [] }] }
     } = req.body;
-    console.log(compatibleVehicles)
     const productImages = req.fileLocations || [];
-      const newPrice=JSON.stringify(price)
-      const vehicles=JSON.parse(compatibleVehicles)
-      console.log(productImages,"productImages")
-    if (!name || !description  || !brand) {
+    const vehicles = JSON.parse(compatibleVehicles);
+    if (!name || !description || !brand) {
       return res
         .status(400)
         .json({ success: false, message: "Missing required fields." });
@@ -86,6 +85,7 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
         discountPercent: price.discountPercent ?? 0,
       },
       partNo: partNo || null,
+      regularServiceCategory,
       brand: { en: brand, fr: brandFr },
       picture: productImages,
       quantity: quantity ?? 0,
@@ -544,9 +544,16 @@ export const getFilteredProducts = async (req: AuthRequest, res: Response) => {
       products = await Product.find({ _id: { $in: productIds } })
         .populate("Category", "name")
         .lean();
+    } else if (filter === "Replacement Parts") {
+      // Return products with valid regularServiceCategory
+      products = await Product.find({
+        regularServiceCategory: { $ne: null },
+      })
+        .populate("Category", "name")
+        .lean();
     } else {
+      // Keyword based filters
       const filterMap: Record<string, string[]> = {
-        "Replacement Parts": ["brake", "brakes", "clutch", "pads", "break pad"],
         Lighting: [
           "light",
           "lights",
@@ -565,9 +572,10 @@ export const getFilteredProducts = async (req: AuthRequest, res: Response) => {
         });
       }
 
+      const keywords = filterMap[filter];
       const filterQuery = {
         autoPartType: {
-          $in: filterMap[filter].map((type) => new RegExp(`^${type}$`, "i")),
+          $in: keywords.map((type) => new RegExp(`^${type}$`, "i")),
         },
       };
 
@@ -602,7 +610,7 @@ export const getFilteredProducts = async (req: AuthRequest, res: Response) => {
     res.status(200).json({
       success: true,
       message: "Filtered products fetched successfully",
-      length: products.length,
+      length: updatedProducts.length,
       products: updatedProducts,
     });
   } catch (error) {
@@ -771,7 +779,7 @@ export const getProductsByYearMakeModel = async (
       },
       { $replaceRoot: { newRoot: "$doc" } },
     ]);
-    if (products.length <=0) {
+    if (products.length <= 0) {
       return res.status(404).json({
         success: false,
         message: "No products found for this model",
@@ -792,7 +800,7 @@ export const getProductsByYearMakeModel = async (
   }
 };
 
-// popular productss  
+// popular productss
 export const getMostSoldProducts = async (req: Request, res: Response) => {
   try {
     const mostSold = await Order.aggregate([
@@ -826,36 +834,28 @@ export const getMostSoldProducts = async (req: Request, res: Response) => {
     res.status(200).json(mostSold);
   } catch (error) {
     console.error("Error fetching most sold products:", error);
-    res.status(500).json({ message: "Server error while fetching most sold products" });
-  }
-};  
-
-export const searchProductsforService = async (req: Request, res: Response) => {
-  try {
-    const keyword = req.query.service?.toString();
-
-    if (!keyword || keyword.trim() === "") {
-      return res.status(400).json({ message: "Keyword is required" });
-    }
-
-    const regex = new RegExp(keyword.trim(), "i"); // case-insensitive, partial match
-
-    const products = await Product.find({
-      isActive: true,
-      $or: [
-        { "name.en": regex },
-        { "name.fr": regex },
-        { "description.en": regex },
-        { "description.fr": regex },
-        { "autoPartType": regex }
-      ]
-    });
-
-    res.status(200).json(products);
-  } catch (error) {
-    console.error("Keyword search error:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    res
+      .status(500)
+      .json({ message: "Server error while fetching most sold products" });
   }
 };
 
+export const searchProductsforService = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.serviceId;
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid ID format" });
+    }
+
+    const products = await Product.find({regularServiceCategory:id});
+      if(products.length==0){
+        return res.status(404).json({message:"No Products found for the Selected Service Type"})
+      }
+    res.status(200).json({ message: "Products Fetched", products });
+  } catch (error) {
+    console.error("Product search error:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 

@@ -1,7 +1,7 @@
 import { Document } from "mongoose";
 
 export interface ISubSubcategory extends Document {
-    subsubcategoryId: string;
+    
     name: {
         en: string;
         fr?: string;
