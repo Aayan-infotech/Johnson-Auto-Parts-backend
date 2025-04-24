@@ -4,9 +4,9 @@ import StaticPage from "../models/StaticPage";
 // get static page
 const getStaticPage = async (req: Request, res: Response) => {
     try {
-        const key = req.params.slug;
+        const slug = req.params.slug;
 
-        const content = await StaticPage.findOne({ key });
+        const content = await StaticPage.findOne({ slug });
 
         if (!content) {
             return res.status(404).json({

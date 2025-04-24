@@ -8,6 +8,6 @@ import {
 const router = Router();
 
 router.get("/get/:slug", getStaticPage);
-router.post("/update/:key", updateStaticPage);
+router.post("/update/:slug", updateStaticPage);
 
 export default router;
