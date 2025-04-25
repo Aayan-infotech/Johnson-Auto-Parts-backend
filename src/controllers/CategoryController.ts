@@ -11,8 +11,9 @@ const insertCategory = async (req: Request, res: Response) => {
 
         if (existingCategory) {
             return res.status(400).json({
-                message: "Category with this name or slug already exists",
+                success: false,
                 status: 400,
+                message: "Category with this name or slug already exists",
             });
         }
 

@@ -13,6 +13,7 @@ import staticPageRoutes from "./staticPageRoutes"
 import regualrServiceRoutes from "./regualrServiceRoutes"
 import companyRoutes from "./OEM&AfterMarket/Company.routes"
 import modelRoutes from "./OEM&AfterMarket/Models.Routes"
+import faqRoutes from "./FAQ/FaqRoutes";
 
 
 const router = express.Router();
@@ -31,6 +32,7 @@ router.use("/api/static-page", staticPageRoutes);
 router.use("/api/regular-services", regualrServiceRoutes);
 router.use("/api/companies", companyRoutes);
 router.use("/api/models", modelRoutes);
+router.use("/api/faq", faqRoutes);
 
 
 
