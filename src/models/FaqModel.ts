@@ -16,4 +16,4 @@ const FaqSchema = new Schema<IFaq>(
     { timestamps: true }
 );
 
-export default mongoose.model<IFaq>("Category", FaqSchema);
+export default mongoose.model<IFaq>("faq", FaqSchema);

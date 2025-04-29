@@ -14,6 +14,7 @@ import regualrServiceRoutes from "./regualrServiceRoutes"
 import companyRoutes from "./OEM&AfterMarket/Company.routes"
 import modelRoutes from "./OEM&AfterMarket/Models.Routes"
 import partVideoRoutes from "./partsVideo.Routes"
+import faqRoutes from "./FAQ/FaqRoutes";
 
 
 const router = express.Router();
@@ -33,6 +34,7 @@ router.use("/api/regular-services", regualrServiceRoutes);
 router.use("/api/companies", companyRoutes);
 router.use("/api/models", modelRoutes);
 router.use("/api/part-video", partVideoRoutes);
+router.use("/api/faq", faqRoutes);
 
 
 
