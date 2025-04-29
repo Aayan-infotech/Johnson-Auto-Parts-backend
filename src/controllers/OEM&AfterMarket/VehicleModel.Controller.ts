@@ -61,3 +61,37 @@ export const getModelById = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+export const updateModel = async (req: ModelRequest, res: Response) => {
+  try {
+    const { modelName, company } = req.body;
+    const modelImage = req.fileLocations;
+    const modelId = req.params.id;
+
+    // Prepare an object to hold only the valid fields
+    const updateData: any = {};
+
+    if (modelName) updateData.modelName = modelName;
+    if (modelImage) updateData.modelImage = modelImage;
+
+    // Update the model with only the valid fields
+    const updatedModel = await VehicleModel.findByIdAndUpdate(
+      modelId,
+      updateData,
+      { new: true } // Return the updated model
+    );
+
+    if (company) {
+      await CompanyModel.findByIdAndUpdate(
+        company,
+        { $addToSet: { models: updatedModel?._id } }, 
+        { new: true }
+      );
+    }
+
+    res.status(200).json({ success: true, data: updatedModel });
+  } catch (error: any) {
+    console.error("Error updating model:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
