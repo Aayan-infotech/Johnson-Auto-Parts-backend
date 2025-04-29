@@ -1,14 +1,14 @@
-import {Response, Request} from 'express';
+import { Response, Request } from 'express';
 import StaticPage from "../models/StaticPage";
 
 // get static page
-const getStaticPage = async(req: Request, res: Response) => {
-    try{
-        const key = req.params.key;
+const getStaticPage = async (req: Request, res: Response) => {
+    try {
+        const slug = req.params.slug;
 
-        const content = await StaticPage.findOne({key});
+        const content = await StaticPage.findOne({ slug });
 
-        if(!content){
+        if (!content) {
             return res.status(404).json({
                 success: false,
                 status: 404,
@@ -23,7 +23,7 @@ const getStaticPage = async(req: Request, res: Response) => {
             data: content
         });
     }
-    catch(error){
+    catch (error) {
         return res.status(500).json({
             success: false,
             status: 500,
@@ -34,22 +34,21 @@ const getStaticPage = async(req: Request, res: Response) => {
 };
 
 // update Static page
-const updateStaticPage = async(req: Request, res: Response) => {
-    try{
-       const key = req.params.key;
-       
-       const content = req.body
+const updateStaticPage = async (req: Request, res: Response) => {
+    try {
+        const slug = req.params.slug;
+        const {key, content} = req.body;
 
-       const updated = await StaticPage.findOneAndUpdate({key}, {content}, {new: true, upsert: true});
+        const updated = await StaticPage.findOneAndUpdate({ slug }, { slug, key, content }, { upsert: true, new: true });
 
-       res.status(200).json({
-        success: true,
-        status: 200,
-        message: "Page content updated successfully!",
-        data: updated
-       });
+        res.status(200).json({
+            success: true,
+            status: 200,
+            message: "Page content updated successfully!",
+            data: updated
+        });
     }
-    catch(error){
+    catch (error) {
         return res.status(500).json({
             success: false,
             status: 500,
