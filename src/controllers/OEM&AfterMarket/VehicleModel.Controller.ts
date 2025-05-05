@@ -67,17 +67,15 @@ export const updateModel = async (req: ModelRequest, res: Response) => {
     const modelImage = req.fileLocations;
     const modelId = req.params.id;
 
-    // Prepare an object to hold only the valid fields
     const updateData: any = {};
 
     if (modelName) updateData.modelName = modelName;
     if (modelImage) updateData.modelImage = modelImage;
 
-    // Update the model with only the valid fields
     const updatedModel = await VehicleModel.findByIdAndUpdate(
       modelId,
       updateData,
-      { new: true } // Return the updated model
+      { new: true } 
     );
 
     if (company) {
