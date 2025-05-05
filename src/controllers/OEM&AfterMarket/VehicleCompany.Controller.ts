@@ -15,6 +15,20 @@ export const createCompany = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+export const updateCompany = async (req: Request, res: Response) => {
+  try {
+    const {companyId}=req.params
+    const { companyName } = req.body;
+    const newCompany = await CompanyModel.findByIdAndUpdate(companyId,{ companyName });
+    res.status(201).json({
+      message: "Company updated Successfully",
+      success: true,
+      data: newCompany,
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 export const getAllCompanies = async (_req: Request, res: Response) => {
   try {
