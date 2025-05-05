@@ -17,7 +17,6 @@ const ContactUsSchema: Schema = new Schema<IContactUs>({
     },
     response: {
         type: String,
-        default: ''
     },
     phone: {
         type: String
