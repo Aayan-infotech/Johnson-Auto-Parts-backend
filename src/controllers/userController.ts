@@ -69,7 +69,7 @@ const login = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email }).select('+password').lean();
-    if(user?.isActive){
+    if(!user?.isActive){
         return res.status(403).json({
             success:false,
             message:"Your account has been marked inactive by the user"
