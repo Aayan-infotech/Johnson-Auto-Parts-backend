@@ -336,7 +336,7 @@ const updateUser = async (req: AuthRequest, res: Response) => {
 
     const { fullName, mobile, isActive, oldPassword, newPassword } = req.body;
     if((oldPassword&&!newPassword)||(!oldPassword&&newPassword)){
-      return res.status(402).json({
+      return res.status(403).json({
         success:false,
         message:"Old Password and New password are required, If you want to change your password!"
       })
