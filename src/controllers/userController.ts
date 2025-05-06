@@ -336,6 +336,12 @@ const updateUser = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
 
     const { fullName, mobile, isActive, oldPassword, newPassword } = req.body;
+    if((oldPassword&&!newPassword)||(!oldPassword&&newPassword)){
+      return res.status(402).json({
+        success:false,
+        message:"Old Password and New password are required, If you want to change your password!"
+      })
+    }
 
     const updateFields: Partial<{
       name: string;
