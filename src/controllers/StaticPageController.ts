@@ -9,7 +9,7 @@ const getStaticPage = async (req: Request, res: Response) => {
         const slug = req.params.slug;
 
         const content = await StaticPage.findOne({ slug });
-        if(!content){
+        if (!content) {
             return res.status(404).json({
                 success: false,
                 status: 404,
@@ -18,8 +18,9 @@ const getStaticPage = async (req: Request, res: Response) => {
         }
         const translatedContent = {
             id: content._id,
-            content: content.content?.[lang as keyof typeof content.content] || content.content?.en,
-          };
+            content: content.content[lang as keyof typeof content.content] || content.content.en,
+            // content: content.content?.[lang] || content.content?.en,
+        };
 
         res.status(200).json({
             success: true,
@@ -44,9 +45,24 @@ const updateStaticPage = async (req: Request, res: Response) => {
     try {
         const slug = req.params.slug;
         const { key, content } = req.body;
-        const contentFr = await translateText(content, "fr");
+        const existing = await StaticPage.findOne({ slug });
 
-        const updated = await StaticPage.findOneAndUpdate({ slug }, { slug, key, content:{en: content, fr: contentFr} }, { upsert: true, new: true });
+        const contentEn = typeof content === 'string' ? content : content.en;
+        console.log(contentEn);
+        const contentFr = existing?.content?.fr || await translateText(contentEn, "fr");
+        console.log(contentFr);
+        const updated = await StaticPage.findOneAndUpdate(
+            { slug },
+            {
+                slug,
+                key,
+                content: {
+                    en: contentEn,
+                    fr: contentFr
+                }
+            },
+            { upsert: true, new: true }
+        );
 
 
         res.status(200).json({
