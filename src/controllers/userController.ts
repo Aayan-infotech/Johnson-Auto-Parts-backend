@@ -210,8 +210,8 @@ const verifyOtp = async (req: Request, res: Response) => {
 const restPassword = async (req: AuthRequest, res: Response) => {
   try {
     const { newPassword } = req.body;
-    const userId = req.user;
-    const userData = await User.findOne({ userId });
+    const userId = req?.user?.userId;
+    const userData = await User.findOne({ _id: userId });
 
     if (!userData) {
       return res.status(404).json({

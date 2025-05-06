@@ -30,6 +30,29 @@ const verifyAccessToken = async (req: AuthRequest, res: Response, next: NextFunc
     }
 };
 
+const verifyToken = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const config = await getConfig();
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ message: 'Access token is missing', status: 401 });
+    }
+
+    try {
+        const jwtAccess: any = config.JWT_REFRESH_SECRET;
+        const decoded: any = jwt.verify(token, jwtAccess);
+
+        req.user = {
+            userId: decoded.userId,
+            email: decoded.email,
+        };
+
+        next();
+    } catch (error) {
+        return res.status(401).json({ message: "Invalid token", status: 401 });
+    }
+};
+
 
 const refreshAccessToken = async (req: Request, res: Response, next: NextFunction) => {
     const refreshToken = req.body.refreshToken;
@@ -45,7 +68,7 @@ const refreshAccessToken = async (req: Request, res: Response, next: NextFunctio
         const decoded: any = jwt.verify(refreshToken, jwtRef);
         const userId = decoded.userId;
 
-        const storedToken = await User.findOne({ userId, refreshToken });
+        const storedToken = await User.findOne({_id: userId, refreshToken });
 
         if (!storedToken) {
             return res.status(403).json({ message: 'Invalid refresh token', status: 403 });
@@ -67,4 +90,4 @@ const refreshAccessToken = async (req: Request, res: Response, next: NextFunctio
     }
 };
 
-export {verifyAccessToken , refreshAccessToken};
+export {verifyAccessToken,verifyToken , refreshAccessToken};
