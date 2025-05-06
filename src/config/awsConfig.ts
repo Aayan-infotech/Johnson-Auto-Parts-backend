@@ -13,7 +13,7 @@ const secretsManagerClient = new SecretsManagerClient({
 // Fetch AWS credentials from Secrets Manager
 export const getAwsCredentials = async (): Promise<{ accessKeyId: string; secretAccessKey: string }> => {
   try {
-    const command = new GetSecretValueCommand({ SecretId: 'aws-secret' });
+    const command = new GetSecretValueCommand({ SecretId: 'john4' });
     const data = await secretsManagerClient.send(command);
 
     if (data.SecretString) {
