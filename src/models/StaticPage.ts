@@ -5,7 +5,10 @@ const StaticPageSchema = new Schema<IStaticPage>(
     {
         slug: {type: String, required: true},
         key: {type: String, required: true},
-        content: {type: String, required: true}
+        content: {
+            en: {type: String},
+            fr: {type: String},
+        }
     },
     { timestamps: true}
 );
