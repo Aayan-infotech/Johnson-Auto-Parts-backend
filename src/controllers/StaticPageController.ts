@@ -38,6 +38,7 @@ const getStaticPage = async (req: Request, res: Response) => {
     }
 };
 
+
 // update Static page
 const updateStaticPage = async (req: Request, res: Response) => {
     try {
