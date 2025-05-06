@@ -908,5 +908,33 @@ export const productsOfModel = async (req: Request, res: Response) => {
   }
 };
 
+export const searchProducts = async (req: Request, res: Response) => {
+  try {
+    const { query } = req.query;
+
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({ message: 'Query parameter is required' });
+    }
+
+    const regex = new RegExp(query, 'i'); // case-insensitive partial match
+
+    const products = await Product.find({
+      $or: [
+        { 'name.en': regex },
+        { 'name.fr': regex },
+        { 'description.en': regex },
+        { 'description.fr': regex },
+        { 'compatibleVehicles.models.model': regex },
+      ],
+    });
+
+    res.json(products);
+  } catch (error) {
+    console.error('Search error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+
 
 

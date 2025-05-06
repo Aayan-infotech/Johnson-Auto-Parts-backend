@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import {createProduct,getAllProducts,getProductById,updateProduct,deleteProduct,getProductBySubCategoryOrSubSubCategory, getMostSoldProducts, getProductByautoPartType, getFilteredProducts, getYears, getMakesByYear, getModelsByYearAndMake, getProductsByYearMakeModel, searchProductsforService, productsOfModel} from "../../controllers/product/ProductController";
+import {createProduct,getAllProducts,getProductById,updateProduct,deleteProduct,getProductBySubCategoryOrSubSubCategory, getMostSoldProducts, getProductByautoPartType, getFilteredProducts, getYears, getMakesByYear, getModelsByYearAndMake, getProductsByYearMakeModel, searchProductsforService, productsOfModel, searchProducts} from "../../controllers/product/ProductController";
 import {uploadToS3}  from "../../middleware/s3Upload";
 
 const router = Router();
@@ -22,6 +22,7 @@ router.get('/model', getModelsByYearAndMake);
 router.get('/popular-products', getMostSoldProducts);
 router.get('/service-products/:serviceId', searchProductsforService);
 router.get('/model-products', productsOfModel);
+router.get('/search-products', searchProducts);
 
 
 export default router;

@@ -30,7 +30,6 @@ export const createModel = async (req: ModelRequest, res: Response) => {
   }
 };
 
-
 export const getAllModelsOfCompany = async (req: Request, res: Response) => {
   try {
     const {companyId} = req.params;
@@ -40,6 +39,20 @@ export const getAllModelsOfCompany = async (req: Request, res: Response) => {
       .json({
         success: true,
         message: "All the model of this Company Fetched successfully",
+        data: models,
+      });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+export const getAllModels = async (req: Request, res: Response) => {
+  try {
+    const models = await VehicleModel.find({});
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "All the models Fetched successfully",
         data: models,
       });
   } catch (error: any) {
@@ -67,23 +80,23 @@ export const updateModel = async (req: ModelRequest, res: Response) => {
     const modelImage = req.fileLocations;
     const modelId = req.params.id;
 
-    // Prepare an object to hold only the valid fields
     const updateData: any = {};
 
     if (modelName) updateData.modelName = modelName;
-    if (modelImage) updateData.modelImage = modelImage;
+    if (modelImage && modelImage.length > 0) {
+      updateData.modelImage = modelImage;
+    }
 
-    // Update the model with only the valid fields
     const updatedModel = await VehicleModel.findByIdAndUpdate(
       modelId,
       updateData,
-      { new: true } // Return the updated model
+      { new: true }
     );
 
     if (company) {
       await CompanyModel.findByIdAndUpdate(
         company,
-        { $addToSet: { models: updatedModel?._id } }, 
+        { $addToSet: { models: updatedModel?._id } },
         { new: true }
       );
     }

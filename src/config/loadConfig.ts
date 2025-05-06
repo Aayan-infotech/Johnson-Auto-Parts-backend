@@ -45,7 +45,7 @@ async function getConfig(): Promise<Config> {
           EMAIL_USER: secrets.EMAIL_USER,
           EMAIL_PASS: secrets.EMAIL_PASS,
           SESSION_SECRET: "john-session",
-          BUCKET_NAME: "johnson-kbo60b7v",
+          BUCKET_NAME: "robert-64qi1m2t",
           AWS_REGION: "us-east-1",
           SLIMCD_USERNAME: "R6UT8C6M",
           SLIMCD_PASSWORD: "iamgroot",
