@@ -32,9 +32,9 @@ async function getConfig(): Promise<Config> {
       const command = new GetSecretValueCommand({
         SecretId: "john4",
       });
-        console.log("command",command)
+        // console.log("command",command)
       const response = await secretsManager.send(command);
-      console.log("response",command)
+      console.log("response",response)
 
       if (response.SecretString) {
         const secrets = JSON.parse(response.SecretString);
