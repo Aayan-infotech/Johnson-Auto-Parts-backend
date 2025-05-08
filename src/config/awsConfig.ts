@@ -14,10 +14,12 @@ const secretsManagerClient = new SecretsManagerClient({
 // Fetch AWS credentials from Secrets Manager
 export const getAwsCredentials = async (): Promise<{ accessKeyId: string; secretAccessKey: string }> => {
   try {
-    const command = new GetSecretValueCommand({ SecretId: +'john4' });
+
+    const command = new GetSecretValueCommand({ SecretId: 'john4' });
+
     const data = await secretsManagerClient.send(command);
 
-    if (data.SecretString) {
+    if (data.SecretString) { 
       const secret = JSON.parse(data.SecretString);
       return {
         accessKeyId: secret.AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID!,

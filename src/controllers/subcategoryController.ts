@@ -121,7 +121,7 @@ const deleteSubcategory = async (req: Request, res: Response) => {
 // get subcategory for admin
 const getSubcategoryForAdmin = async (req: Request, res: Response) => {
   try {
-    const subcategories = await Subcategory.find().lean();
+    const subcategories = await Subcategory.find().populate("categoryId").lean();
 
     if (subcategories.length === 0) {
       return res.status(200).json({
