@@ -4,33 +4,44 @@ import dotenv from 'dotenv';
 import getConfig from "../config/loadConfig";
 const config = getConfig();
 
-
 dotenv.config();
 
+const ENV = process.env.NODE_ENV || "production";
+
+// Initialize with default region
 const secretsManagerClient = new SecretsManagerClient({
-  region: "us-east-1",
+  region: process.env.AWS_REGION || "us-east-1",
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
+  },
 });
 
 // Fetch AWS credentials from Secrets Manager
 export const getAwsCredentials = async (): Promise<{ accessKeyId: string; secretAccessKey: string }> => {
+  if (ENV !== "production") {
+    return {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
+    };
+  }
+
   try {
-
     const command = new GetSecretValueCommand({ SecretId: 'john4' });
-
     const data = await secretsManagerClient.send(command);
 
     if (data.SecretString) { 
       const secret = JSON.parse(data.SecretString);
       return {
-        accessKeyId: secret.AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: secret.AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY!,
+        accessKeyId: secret.AWS_ACCESS_KEY_ID,
+        secretAccessKey: secret.AWS_SECRET_ACCESS_KEY,
       };
     }
 
     throw new Error('Failed to retrieve AWS credentials');
   } catch (error) {
-    console.log(error)
-    throw new Error('Error fetching AWS credentials from Secrets Manager');
+    console.error('Error fetching AWS credentials from Secrets Manager:', error);
+    throw error;
   }
 };
 
