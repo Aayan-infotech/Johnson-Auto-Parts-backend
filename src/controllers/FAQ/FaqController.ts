@@ -80,6 +80,51 @@ export const getFaq = async (req: Request, res: Response) => {
     }
 };
 
+export const editFaq = async (req: Request, res: Response) => {
+  try {
+    const { faqId } = req.params;
+    const { question, answer } = req.body;
+
+    const existingFaq = await FaqModel.findById(faqId);
+
+    if (!existingFaq) {
+      return res.status(404).json({
+        success: false,
+        status: 404,
+        message: "FAQ not found!",
+      });
+    }
+
+    // Translate the updated question and answer to French
+    const [questionFr, answerFr] = await Promise.all([
+      translateText(question, "fr"),
+      translateText(answer, "fr"),
+    ]);
+
+    existingFaq.question.en = question;
+    existingFaq.question.fr = questionFr;
+    existingFaq.answer.en = answer;
+    existingFaq.answer.fr = answerFr;
+
+    await existingFaq.save();
+
+    res.status(200).json({
+      success: true,
+      status: 200,
+      message: "FAQ updated successfully!",
+      data: existingFaq,
+    });
+  } catch (error) {
+    console.error("Error updating FAQ:", error);
+    return res.status(500).json({
+      success: false,
+      status: 500,
+      message: "Internal server error!",
+      error,
+    });
+  }
+};
+
 // delete Faqs
 export const deleteFaq = async (req: Request, res: Response) => {
     try {
