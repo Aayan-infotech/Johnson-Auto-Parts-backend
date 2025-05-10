@@ -48,9 +48,7 @@ const updateStaticPage = async (req: Request, res: Response) => {
         const existing = await StaticPage.findOne({ slug });
 
         const contentEn = typeof content === 'string' ? content : content.en;
-        console.log(contentEn);
         const contentFr = existing?.content?.fr || await translateText(contentEn, "fr");
-        console.log(contentFr);
         const updated = await StaticPage.findOneAndUpdate(
             { slug },
             {
