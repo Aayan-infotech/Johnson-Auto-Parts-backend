@@ -13,7 +13,7 @@ const router = express.Router();
 router.post("/",uploadToS3, createRegularServiceCategory);
 router.get("/", getAllRegularServices);
 router.get("/:id", getRegularServiceById);
-router.put("/:id", updateRegularService);
+router.put("/:id",uploadToS3, updateRegularService);
 router.delete("/:id", deleteRegularService);
 
 export default router;
