@@ -21,7 +21,7 @@ interface MailOptions {
 
 export const sendMail = async ({ to, subject, html }: MailOptions) => {
   await transporter.sendMail({
-    from: `"AutoParts Store" <${process.env.EMAIL_USER}>`,
+    from: `AutoParts Store <${process.env.EMAIL_USER}>`,
     to,
     subject,
     html,
