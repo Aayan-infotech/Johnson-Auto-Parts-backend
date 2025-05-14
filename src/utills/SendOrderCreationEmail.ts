@@ -1,5 +1,6 @@
-import nodemailer from "nodemailer";
-import moment from "moment";
+// services/sendOrderConfirmationEmail.ts
+import moment from 'moment';
+import { sendMail } from '../utills/mailer'; // ✅ Use the centralized mailer
 
 interface Address {
   fullName: string;
@@ -16,7 +17,7 @@ interface SendOrderEmailParams {
     name?: string;
     email: string;
   };
-  address: Address; // ✅ FIXED this line
+  address: Address;
   order: any;
   items: {
     product: any;
@@ -33,11 +34,11 @@ export const sendOrderConfirmationEmail = async ({
   items,
   totalAmount,
 }: SendOrderEmailParams) => {
-  const orderDate = moment(order.createdAt).format("MMMM Do YYYY, h:mm:ss a");
+  const orderDate = moment(order.createdAt).format('MMMM Do YYYY, h:mm:ss a');
 
   const productDetailsHtml = items
     .map((item) => {
-      const name = item.product?.name?.en || "Product";
+      const name = item.product?.name?.en || 'Product';
       const unitPrice = item.price.toFixed(2);
       const subtotal = (item.price * item.quantity).toFixed(2);
 
@@ -49,20 +50,20 @@ export const sendOrderConfirmationEmail = async ({
           <td>$${subtotal}</td>
         </tr>`;
     })
-    .join("");
+    .join('');
 
   const emailHtml = `
-    <h2>Thank you for your order, ${user.name || "Customer"}!</h2>
+    <h2>Thank you for your order, ${user.name || 'Customer'}!</h2>
     <p><strong>Order ID:</strong> ${order._id}</p>
     <p><strong>Date:</strong> ${orderDate}</p>
     <p><strong>Shipping Address:</strong></p>
-<p>
-  ${address.fullName}<br />
-  ${address.street}<br />
-  ${address.city}, ${address.state} ${address.postalCode}<br />
-  ${address.country}<br />
-  Phone: ${address.phoneNumber}
-</p>
+    <p>
+      ${address.fullName}<br />
+      ${address.street}<br />
+      ${address.city}, ${address.state} ${address.postalCode}<br />
+      ${address.country}<br />
+      Phone: ${address.phoneNumber}
+    </p>
 
     <table border="1" cellpadding="10" cellspacing="0" style="border-collapse: collapse;">
       <thead>
@@ -82,21 +83,9 @@ export const sendOrderConfirmationEmail = async ({
     <p>We’ll notify you when your order is on its way. 🎉</p>
   `;
 
-  const transporter = nodemailer.createTransport({
-    service: "Gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-    tls: {
-      rejectUnauthorized: false,
-    },
-  });
-
-  await transporter.sendMail({
-    from: `"AutoParts Store" <${process.env.EMAIL_USER}>`,
+  await sendMail({
     to: user.email,
-    subject: "Your Order Confirmation",
+    subject: 'Your Order Confirmation',
     html: emailHtml,
   });
 };

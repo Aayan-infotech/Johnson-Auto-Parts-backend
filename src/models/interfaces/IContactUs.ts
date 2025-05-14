@@ -1,12 +1,13 @@
 // interfaces/IContactUs.ts
 import { Document } from 'mongoose';
 
-export interface IContactUs extends Document {
-  userId?: string;
+export interface IContact {
+  name: string;
   email: string;
+  subject?: string;
   message: string;
-  response: string;
-  phone?: string;
-  queryNo: string;
-  createdAt: Date;
+  isReplied?: boolean;
+  reply?: string;
+  createdAt?: Date;
 }
+

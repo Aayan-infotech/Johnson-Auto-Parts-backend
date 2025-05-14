@@ -1,35 +1,16 @@
-// models/ContactUs.ts
-import mongoose, { Schema, model } from 'mongoose';
-import { v4 as uuidv4 } from "uuid";
-import { IContactUs } from '../models/interfaces/IContactUs';
+import mongoose, { Schema, Document } from 'mongoose';
+import { IContact } from './interfaces/IContactUs';
 
-const ContactUsSchema: Schema = new Schema<IContactUs>({
-    userId: {
-        type: String
-    },
-    email: {
-        type: String,
-        required: true
-    },
-    message: {
-        type: String,
-        required: true
-    },
-    response: {
-        type: String,
-    },
-    phone: {
-        type: String
-    },
-    queryNo: {
-        type: String,
-        default: () => `QRY-${uuidv4().split('-')[0].toUpperCase()}`, // short + readable
-        unique: true
-      },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
+export interface IContactDocument extends IContact, Document {}
+
+const ContactSchema: Schema = new Schema<IContactDocument>({
+  name: { type: String, required: true },
+  email: { type: String, required: true },
+  subject: { type: String },
+  message: { type: String, required: true },
+  isReplied: { type: Boolean, default: false },
+  reply: { type: String },
+  createdAt: { type: Date, default: Date.now }
 });
 
-export default mongoose.model<IContactUs>('ContactUs', ContactUsSchema);
+export const ContactModel = mongoose.model<IContactDocument>('Contact', ContactSchema);
