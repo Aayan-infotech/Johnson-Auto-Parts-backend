@@ -61,6 +61,7 @@ export const replyToContact = async (req: Request, res: Response) => {
       <p>If you have further questions, feel free to reply again!</p>
       <p>– AutoParts Hub Support Team</p>
     `;
+
     await sendMail({ to: contact.email, subject, html });
 
     contact.reply = reply;
