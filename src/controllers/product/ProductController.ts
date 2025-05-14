@@ -29,6 +29,7 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
       regularServiceCategory,
       compatibleVehicles, //array of { make, models: [{ model, years: [] }] }
     } = req.body;
+    console.log(req.fileLocations);
     const productImages = req.fileLocations || [];
     const vehicles = JSON.parse(compatibleVehicles);
     if (!name || !description || !brand) {
@@ -320,18 +321,20 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
       name,
       description,
       price,
-      quantity,
-      categoryId,
-      subcategoryId,
-      subsubcategoryId,
+      discount,
+      stock,
+      category,
+      subCategory,
+      subSubCategory,
       brand,
       isActive,
-      autoPartType,
-      compatibleVehicles, // Now expected to be an array of { make, models: [{ model, years: [] }] }
       partNo,
+      type,
+      compatibleVehicles,
+      removedImages,
     } = req.body;
 
-    const productImages = req.fileLocations;
+    const productImages = req.fileLocations || [];
 
     // Find the existing product
     const existingProduct = await Product.findById(productId);
@@ -341,32 +344,44 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
         .json({ success: false, message: "Product not found" });
     }
 
-    // Validate category existence
-    if (categoryId && !(await Category.findById(categoryId))) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid categoryId. Category does not exist.",
-      });
+    // -------- Validate and Normalize Categories -------- //
+    let validCategory = category;
+    if (category && category !== "N/A") {
+      if (!mongoose.isValidObjectId(category)) {
+        validCategory = null;
+      } else {
+        const exists = await Category.findById(category);
+        if (!exists) validCategory = null;
+      }
+    } else {
+      validCategory = null;
     }
 
-    if (subcategoryId && !(await Subcategory.findById(subcategoryId))) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid subcategoryId. Subcategory does not exist.",
-      });
+    let validSubCategory = subCategory;
+    if (subCategory && subCategory !== "N/A") {
+      if (!mongoose.isValidObjectId(subCategory)) {
+        validSubCategory = null;
+      } else {
+        const exists = await Subcategory.findById(subCategory);
+        if (!exists) validSubCategory = null;
+      }
+    } else {
+      validSubCategory = null;
     }
 
-    if (
-      subsubcategoryId &&
-      !(await SubSubcategory.findById(subsubcategoryId))
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid subsubcategoryId. Sub-subcategory does not exist.",
-      });
+    let validSubSubCategory = subSubCategory;
+    if (subSubCategory && subSubCategory !== "N/A") {
+      if (!mongoose.isValidObjectId(subSubCategory)) {
+        validSubSubCategory = null;
+      } else {
+        const exists = await SubSubcategory.findById(subSubCategory);
+        if (!exists) validSubSubCategory = null;
+      }
+    } else {
+      validSubSubCategory = null;
     }
 
-    // Handle translation if new values are provided
+    // -------- Translation logic -------- //
     const updatedName = name
       ? { en: name, fr: await translateText(name, "fr") }
       : existingProduct.name;
@@ -379,44 +394,84 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
       ? { en: brand, fr: await translateText(brand, "fr") }
       : existingProduct.brand;
 
+    // -------- Compatible Vehicles -------- //
+    let updatedCompatibleVehicles = existingProduct.compatibleVehicles;
+    if (compatibleVehicles) {
+      try {
+        updatedCompatibleVehicles =
+          typeof compatibleVehicles === "string"
+            ? JSON.parse(compatibleVehicles)
+            : compatibleVehicles;
+      } catch (err) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid format for compatibleVehicles.",
+        });
+      }
+    }
+
+    // -------- Price -------- //
     const updatedPrice = {
-      actualPrice: price?.actualPrice ?? existingProduct.price.actualPrice,
-      discountPercent:
-        price?.discountPercent ?? existingProduct.price.discountPercent,
+      actualPrice: price ?? existingProduct.price.actualPrice,
+      discountPercent: discount ?? existingProduct.price.discountPercent,
     };
 
-    const updatedCompatibleVehicles = compatibleVehicles
-      ? compatibleVehicles // ✅ accept new array if provided
-      : existingProduct.compatibleVehicles;
+    let updatedImages = existingProduct.picture || [];
 
+    if (removedImages && Array.isArray(removedImages)) {
+      const normalizeUrl = (url: string) => {
+        try {
+          const parsedUrl = new URL(url);
+          return parsedUrl.pathname.replace(/^\/+/, ""); // Remove leading slashes
+        } catch {
+          return url.trim();
+        }
+      };
+
+      const removeSet = new Set(removedImages.map(normalizeUrl));
+
+      updatedImages = updatedImages.filter((imgUrl) => {
+        const normalized = normalizeUrl(imgUrl);
+        const keep = !removeSet.has(normalized);
+        if (!keep) console.log("Removing image:", imgUrl);
+        return keep;
+      });
+    }
+
+    if (productImages.length > 0) {
+      updatedImages = [...updatedImages, ...productImages];
+    }
+    // -------- Prepare update data -------- //
     const updateData = {
       name: updatedName,
       description: updatedDescription,
       brand: updatedBrand,
       price: updatedPrice,
-      quantity: quantity ?? existingProduct.quantity,
-      Category: categoryId || existingProduct.Category,
-      SubCategory: subcategoryId || existingProduct.SubCategory,
-      SubSubcategory: subsubcategoryId || existingProduct.SubSubcategory,
-      picture: productImages ?? existingProduct.picture,
+      quantity: stock ?? existingProduct.quantity,
+      Category: validCategory,
+      SubCategory: validSubCategory,
+      SubSubcategory: validSubSubCategory,
+      picture: updatedImages,
       isActive: isActive ?? existingProduct.isActive,
-      autoPartType: autoPartType ?? existingProduct.autoPartType,
+      autoPartType: type ?? existingProduct.autoPartType,
       partNo: partNo ?? existingProduct.partNo,
       compatibleVehicles: updatedCompatibleVehicles,
     };
 
+    // -------- Update product -------- //
     const updatedProduct = await Product.findByIdAndUpdate(
       productId,
       { $set: updateData },
       { new: true, runValidators: true }
     ).lean();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Product updated successfully",
       updatedProduct,
     });
   } catch (error) {
+    console.error("Update Product Error:", error);
     res.status(500).json({
       success: false,
       message: "Error updating product",
@@ -872,7 +927,10 @@ export const productsOfModel = async (req: Request, res: Response) => {
     }
 
     // Restrict to "en" or "fr", default to "en"
-    const language = typeof lang === "string" && (lang === "en" || lang === "fr") ? lang : "en";
+    const language =
+      typeof lang === "string" && (lang === "en" || lang === "fr")
+        ? lang
+        : "en";
 
     const products = await Product.find({
       compatibleVehicles: {
@@ -886,7 +944,7 @@ export const productsOfModel = async (req: Request, res: Response) => {
       },
     });
 
-    const localizedProducts = products.map(product => {
+    const localizedProducts = products.map((product) => {
       const nameObj = product.name as Record<string, string>;
       const descObj = product.description as Record<string, string>;
 
@@ -912,29 +970,25 @@ export const searchProducts = async (req: Request, res: Response) => {
   try {
     const { query } = req.query;
 
-    if (!query || typeof query !== 'string') {
-      return res.status(400).json({ message: 'Query parameter is required' });
+    if (!query || typeof query !== "string") {
+      return res.status(400).json({ message: "Query parameter is required" });
     }
 
-    const regex = new RegExp(query, 'i'); // case-insensitive partial match
+    const regex = new RegExp(query, "i"); // case-insensitive partial match
 
     const products = await Product.find({
       $or: [
-        { 'name.en': regex },
-        { 'name.fr': regex },
-        { 'description.en': regex },
-        { 'description.fr': regex },
-        { 'compatibleVehicles.models.model': regex },
+        { "name.en": regex },
+        { "name.fr": regex },
+        { "description.en": regex },
+        { "description.fr": regex },
+        { "compatibleVehicles.models.model": regex },
       ],
     });
 
     res.json(products);
   } catch (error) {
-    console.error('Search error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Search error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
-
-
-
-

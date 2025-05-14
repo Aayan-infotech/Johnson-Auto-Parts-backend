@@ -12,7 +12,7 @@ const SubcategorySchema = new Schema<ISubcategory>(
         slug: { type: String, required: true, unique: true },
         picture: { type: String, required: false, },
         isActive: { type: Boolean, default: false },
-        categoryId: { type: String, required: true },
+        categoryId: { type: String, required: true,ref:"Category" },
     },
     { timestamps: true }
 );
