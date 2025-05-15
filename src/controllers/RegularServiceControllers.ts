@@ -7,13 +7,18 @@ interface AuthRequest extends Request {
 }
 
 // CREATE
-export const createRegularServiceCategory = async (req: AuthRequest, res: Response) => {
+export const createRegularServiceCategory = async (
+  req: AuthRequest,
+  res: Response
+) => {
   try {
     const { name, description, categoryDiscount } = req.body;
     const image = req.fileLocations?.[0] ?? "";
 
     if (!name || !description) {
-      return res.status(400).json({ success: false, message: "Name and Description are required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Name and Description are required" });
     }
 
     // Translate fields to French
@@ -49,10 +54,11 @@ export const getAllRegularServices = async (req: Request, res: Response) => {
     const { lang } = req.query as { lang?: "en" | "fr" };
     const services = await RegularService.find();
 
-    const translated = services.map(service => ({
+    const translated = services.map((service) => ({
       ...service.toObject(),
       name: service.name?.[lang ?? "en"] ?? service.name.en,
-      description: service.description?.[lang ?? "en"] ?? service.description.en,
+      description:
+        service.description?.[lang ?? "en"] ?? service.description.en,
     }));
 
     res.status(200).json({ success: true, data: translated });
@@ -66,12 +72,14 @@ export const getRegularServiceById = async (req: Request, res: Response) => {
   try {
     const { lang } = req.query as { lang?: "en" | "fr" };
     const service = await RegularService.findById(req.params.id);
-    if (!service) return res.status(404).json({ success: false, error: "Not found" });
+    if (!service)
+      return res.status(404).json({ success: false, error: "Not found" });
 
     const translated = {
       ...service.toObject(),
       name: service.name?.[lang ?? "en"] ?? service.name.en,
-      description: service.description?.[lang ?? "en"] ?? service.description.en,
+      description:
+        service.description?.[lang ?? "en"] ?? service.description.en,
     };
 
     res.status(200).json({ success: true, data: translated });
@@ -81,12 +89,13 @@ export const getRegularServiceById = async (req: Request, res: Response) => {
 };
 
 // UPDATE
-export const updateRegularService = async (req: Request, res: Response) => {
+export const updateRegularService = async (req: AuthRequest, res: Response) => {
   try {
     const service = await RegularService.findById(req.params.id);
-    if (!service) return res.status(404).json({ success: false, error: "Not found" });
-
-    const { name, description, categoryDiscount, image } = req.body;
+    if (!service)
+      return res.status(404).json({ success: false, error: "Not found" });
+    const image = req.fileLocations?.[0] ?? "";
+    const { name, description, categoryDiscount } = req.body;
 
     if (name) {
       service.name.en = name;
@@ -118,7 +127,8 @@ export const updateRegularService = async (req: Request, res: Response) => {
 export const deleteRegularService = async (req: Request, res: Response) => {
   try {
     const service = await RegularService.findByIdAndDelete(req.params.id);
-    if (!service) return res.status(404).json({ success: false, error: "Not found" });
+    if (!service)
+      return res.status(404).json({ success: false, error: "Not found" });
     res.status(200).json({ success: true, message: "Deleted successfully" });
   } catch (error) {
     res.status(500).json({ success: false, error: "Deletion failed" });

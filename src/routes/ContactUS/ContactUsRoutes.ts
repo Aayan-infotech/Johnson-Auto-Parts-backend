@@ -1,15 +1,21 @@
-import express from 'express';
+import { Router } from 'express';
 import {
-  submitQuestion,
-  answerQuestion,
+  createContact,
+  getAllContacts,
+  getContactById,
+  deleteContact,
+  replyToContact
 } from '../../controllers/ContactUs/Contact';
 
-const router = express.Router();
+const router = Router();
 
-// User submits a question
-router.post('/create', submitQuestion);
+// Public Route — Submit a contact form
+router.post('/', createContact);
 
-// Admin answers a question
-router.put('/admin/contact-us/:id/answer', answerQuestion);
+// Admin Routes
+router.get('/', getAllContacts);
+router.get('/:id', getContactById);
+router.delete('/:id', deleteContact);
+router.post('/reply/:id', replyToContact);
 
 export default router;
