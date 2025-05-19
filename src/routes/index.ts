@@ -16,6 +16,7 @@ import modelRoutes from "./OEM&AfterMarket/Models.Routes"
 import partVideoRoutes from "./partsVideo.Routes"
 import faqRoutes from "./FAQ/FaqRoutes";
 import contactRoutes from "./ContactUS/ContactUsRoutes";
+import translateRoute from "./translateRoutes"
 
 
 const router = express.Router();
@@ -37,6 +38,7 @@ router.use("/api/models", modelRoutes);
 router.use("/api/part-video", partVideoRoutes);
 router.use("/api/faq", faqRoutes);
 router.use("/api/contact-us", contactRoutes);
+router.use("/api/translate", translateRoute)
 
 
 
