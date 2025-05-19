@@ -23,7 +23,7 @@ export const uploadToS3 = async (req: MulterRequest, res: Response, next: NextFu
       return next();
     }
 
-    try {
+    try {5
       const s3 = await getS3Client();
       const files = req.files as Express.Multer.File[];
       const bucketName = (await config).BUCKET_NAME;
