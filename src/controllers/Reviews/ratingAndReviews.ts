@@ -46,7 +46,7 @@ export const getAllReviewsWithUserDetails = async (
 ) => {
   try { 
     const reviews = await Review.find()
-      .populate("userId", "name image")
+      .populate("userId", "name profilePicture")
       .populate("productId", "name")
       .sort({ createdAt: -1 }).limit(10);
 
