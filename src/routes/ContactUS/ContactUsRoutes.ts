@@ -10,7 +10,7 @@ import {
 const router = Router();
 
 // Public Route — Submit a contact form
-router.post('/', createContact);
+router.post('/create', createContact);
 
 // Admin Routes
 router.get('/', getAllContacts);
