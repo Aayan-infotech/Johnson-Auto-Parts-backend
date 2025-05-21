@@ -9,7 +9,7 @@ const CategorySchema = new Schema<ICategory>(
             fr: { type: String },
           },
         slug: { type: String, required: true, unique: true },
-        isActive: { type: Boolean, default: false },
+        isActive: { type: Boolean, default: true },
     },
     { timestamps: true }
 );
