@@ -8,6 +8,7 @@ import {
     getCategoriesForAdmin
 }from "../controllers/CategoryController";
 import { verifyAccessToken } from "../middleware/authMiddleware"
+import { uploadToS3 } from "../middleware/s3Upload";
 
 const router = Router();
 
@@ -19,7 +20,7 @@ router.get('/get-category', getCategories);
 
 
 // For admin
-router.post('/admin/insert', insertCategory);
+router.post('/admin/insert',uploadToS3, insertCategory);
 router.get('/admin/get-categories', getCategoriesForAdmin);
 router.put('/admin/activate-category/:id', activeBlockCategory);
 router.put('/admin/update-category/:categoryId', verifyAccessToken, updateCategory);
