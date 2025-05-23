@@ -56,7 +56,7 @@ const AddSubcategory = async (req: S3Request, res: Response) => {
 };
 
 // getsubcategory on the basis of category
-const getSubcategoryByCategory = async (req: Request, res: Response) => {
+const getSubcategoryByCategory = async (req: S3Request, res: Response) => {
   try {
     const { lang } = req.query as { lang?: string };
     const { categoryId } = req.params;
@@ -70,6 +70,8 @@ const getSubcategoryByCategory = async (req: Request, res: Response) => {
       id: cat._id,
       name: cat.name[lang as keyof typeof cat.name] || cat.name.en,
       categoryId: cat.categoryId,
+      image:cat.picture
+
     }));
     if (subcategories.length === 0) {
       return res.status(200).json({

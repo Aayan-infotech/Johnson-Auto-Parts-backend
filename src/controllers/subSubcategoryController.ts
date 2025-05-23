@@ -18,7 +18,7 @@ const insertsubSubcategory = async (req: S3Request, res: Response) => {
     if (existingSubSubcategory) {
       return res.status(400).json({
         message: "SubSubcategory with this name or slug already exists",
-        status: 400
+        status: 400,
       });
     }
 
@@ -31,7 +31,7 @@ const insertsubSubcategory = async (req: S3Request, res: Response) => {
         en: name,
         fr: nameFr,
       },
-      picture:image[0],
+      picture: image[0],
       slug: slug ? slug : name,
     });
 
@@ -51,7 +51,7 @@ const insertsubSubcategory = async (req: S3Request, res: Response) => {
 };
 
 const getSubSubcategoryBySubcategoryId = async (
-  req: Request,
+  req: S3Request,
   res: Response
 ) => {
   try {
@@ -67,6 +67,7 @@ const getSubSubcategoryBySubcategoryId = async (
       id: cat._id,
       name: cat.name[lang as keyof typeof cat.name] || cat.name.en,
       categoryId: cat.categoryId,
+      image: cat.picture,
       subcategoryId: cat.subcategoryId,
     }));
 

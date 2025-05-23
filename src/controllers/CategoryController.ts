@@ -48,7 +48,7 @@ const insertCategory = async (req: S3Request, res: Response) => {
   }
 };
 
-const getCategories = async (req: Request, res: Response) => {
+const getCategories = async (req: S3Request, res: Response) => {
   try {
     const { lang } = req.query as { lang?: string };
     const categories = await Category.find({ isActive: true });
@@ -56,6 +56,7 @@ const getCategories = async (req: Request, res: Response) => {
     const translatedCategories = categories.map((cat) => ({
       id: cat._id,
       name: cat.name[lang as keyof typeof cat.name] || cat.name.en,
+      image:cat.image
     }));
 
     res.status(200).json({
