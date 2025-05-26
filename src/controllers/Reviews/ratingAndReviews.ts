@@ -73,7 +73,7 @@ export const getAllReviewsWithUserDetails = async (req: Request, res: Response) 
 export const getTopReviewsUserDetails = async (req: Request, res: Response) => {
   try {
     const reviews = await Review.find()
-      .populate("userId", "name image")
+      .populate("userId", "name profilePicture")
       .populate("productId", "name")
       .sort({ createdAt: -1 }).limit(10);
 
