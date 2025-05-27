@@ -38,6 +38,4 @@ router.use("/api/part-video", partVideoRoutes);
 router.use("/api/faq", faqRoutes);
 router.use("/api/contact-us", contactRoutes);
 
-
-
 export default router;
