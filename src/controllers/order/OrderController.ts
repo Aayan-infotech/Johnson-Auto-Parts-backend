@@ -160,6 +160,36 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// get orders for admin panel
+export const getOrders = async (req: Request, res: Response) => {
+  try {
+    const orders = await Order.find().populate("user", "name email");
+
+    if (orders.length === 0) {
+      return res.status(200).json({
+        success: true,
+        status: 200,
+        message: "No orders found!",
+        data: orders,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      status: 200,
+      message: "Orders fetched successfully!",
+      data: orders,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      status: 500,
+      message: "Internal server error!",
+      error: error,
+    });
+  }
+};
+
 export const getOrderByUserId = async (req: Request, res: Response) => {
   try {
     const userId = req.params.userId;
@@ -193,32 +223,43 @@ export const getOrderByUserId = async (req: Request, res: Response) => {
   }
 };
 
-// get orders for admin panel
-export const getOrders = async (req: Request, res: Response) => {
+export const trackOwnOrderStatus = async (req: Request, res: Response) => {
   try {
-    const orders = await Order.find().populate("user", "name email");
+    const { orderId } = req.params;
 
-    if (orders.length === 0) {
-      return res.status(200).json({
-        success: true,
-        status: 200,
-        message: "No orders found!",
-        data: orders,
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        status: 400,
+        message: "Order ID is required",
       });
     }
 
+    // Find the order by ID and populate user details (if needed)
+    const order = await Order.findById(orderId).populate("user", "name email");
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        status: 404,
+        message: "Order not found",
+      });
+    }
+
+    // Return order details
     res.status(200).json({
       success: true,
       status: 200,
-      message: "Orders fetched successfully!",
-      data: orders,
+      message: "Order details fetched successfully",
+      data: order,
     });
   } catch (error) {
-    return res.status(500).json({
+    console.error("Error tracking order:", error);
+    res.status(500).json({
       success: false,
       status: 500,
-      message: "Internal server error!",
-      error: error,
+      message: "Internal server error",
+      error,
     });
   }
 };

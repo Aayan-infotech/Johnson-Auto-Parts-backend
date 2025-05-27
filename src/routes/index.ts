@@ -40,6 +40,4 @@ router.use("/api/faq", faqRoutes);
 router.use("/api/contact-us", contactRoutes);
 router.use("/api/translate", translateRoute)
 
-
-
 export default router;

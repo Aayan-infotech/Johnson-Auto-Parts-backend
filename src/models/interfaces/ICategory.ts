@@ -5,6 +5,7 @@ export interface ICategory extends Document {
     en: string;
     fr?: string;
   };
+  image: String;
   slug: string;
   isActive: boolean;
 }

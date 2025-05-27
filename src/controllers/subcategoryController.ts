@@ -1,10 +1,12 @@
 import { Request, Response } from "express";
 import Subcategory from "../models/Subcategory";
 import { translateText } from "../utills/translateService";
-import SubSubcategory from "../models/SubSubcategory";
+interface S3Request extends Request {
+  fileLocations?: string[]; // Adjust the type as needed
+}
 
 // add subcategory
-const AddSubcategory = async (req: Request, res: Response) => {
+const AddSubcategory = async (req: S3Request, res: Response) => {
   try {
     const { categoryId, name, slug } = req.body;
 
@@ -12,6 +14,10 @@ const AddSubcategory = async (req: Request, res: Response) => {
       name: name,
       categoryId: categoryId,
     });
+    const image = req.fileLocations || [];
+    if (!image) {
+      return res.status(400).json({ message: "image is required" });
+    }
     if (existingSubcategory) {
       return res.status(400).json({
         success: false,
@@ -28,6 +34,7 @@ const AddSubcategory = async (req: Request, res: Response) => {
         en: name,
         fr: nameFr,
       },
+      picture: image[0],
       slug: slug ? slug : name,
     });
 
@@ -49,7 +56,7 @@ const AddSubcategory = async (req: Request, res: Response) => {
 };
 
 // getsubcategory on the basis of category
-const getSubcategoryByCategory = async (req: Request, res: Response) => {
+const getSubcategoryByCategory = async (req: S3Request, res: Response) => {
   try {
     const { lang } = req.query as { lang?: string };
     const { categoryId } = req.params;
@@ -63,6 +70,8 @@ const getSubcategoryByCategory = async (req: Request, res: Response) => {
       id: cat._id,
       name: cat.name[lang as keyof typeof cat.name] || cat.name.en,
       categoryId: cat.categoryId,
+      image:cat.picture
+
     }));
     if (subcategories.length === 0) {
       return res.status(200).json({
@@ -121,7 +130,9 @@ const deleteSubcategory = async (req: Request, res: Response) => {
 // get subcategory for admin
 const getSubcategoryForAdmin = async (req: Request, res: Response) => {
   try {
-    const subcategories = await Subcategory.find().populate("categoryId").lean();
+    const subcategories = await Subcategory.find()
+      .populate("categoryId")
+      .lean();
 
     if (subcategories.length === 0) {
       return res.status(200).json({
