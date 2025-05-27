@@ -7,14 +7,20 @@ import getConfig from "../config/loadConfig";
 const config = getConfig();
 
 interface MulterRequest extends Request {
-  files?: Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[] };
+  files?:
+    | Express.Multer.File[]
+    | { [fieldname: string]: Express.Multer.File[] };
   fileLocations?: string[];
 }
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage }).array("files", 10); // Accept up to 10 files
 
-export const uploadToS3 = async (req: MulterRequest, res: Response, next: NextFunction) => {
+export const uploadToS3 = async (
+  req: MulterRequest,
+  res: Response,
+  next: NextFunction
+) => {
   upload(req, res, async (err) => {
     if (err) return res.status(400).json({ error: err.message });
 
@@ -51,5 +57,4 @@ export const uploadToS3 = async (req: MulterRequest, res: Response, next: NextFu
       return res.status(500).json({ error: (uploadError as Error).message });
     }
   });
-}
-
+};

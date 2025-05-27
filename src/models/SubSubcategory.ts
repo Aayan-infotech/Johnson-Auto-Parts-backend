@@ -33,7 +33,7 @@ const SubSubcategorySchema = new Schema<ISubSubcategory>({
     isActive: {
         type: Boolean,
         required: false,
-        default: false
+        default: true
     }
 },{
     timestamps: true,

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Review from "../../models/RatingAndReviews";
 import Product from "../../models/ProductModel";
+import { translateText } from "../../utills/translateService";
 
 // Add a review to a product
 export const addReview = async (req: Request, res: Response) => {
@@ -12,6 +13,8 @@ export const addReview = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
+    const commentFr = await translateText(comment, "fr");
+
     // Check if the product exists
     const product = await Product.findById(productId);
     if (!product) {
@@ -19,7 +22,7 @@ export const addReview = async (req: Request, res: Response) => {
     }
 
     // Create a new review
-    const review = new Review({ productId, userId, rating, comment });
+    const review = new Review({ productId, userId, rating, comment: { en: comment, fr: commentFr } });
     await review.save();
 
     res.status(200).json({ message: "Review added successfully", review });
@@ -30,8 +33,8 @@ export const addReview = async (req: Request, res: Response) => {
 export const getReviews = async (req: Request, res: Response) => {
   try {
     const { productId } = req.params;
-    const reviews = await Review.find({ productId }).populate("productId","name")
-      .populate("userId","name")
+    const reviews = await Review.find({ productId }).populate("productId", "name")
+      .populate("userId", "name")
       .sort({ createdAt: -1 });
 
     res.status(200).json({ reviews });
@@ -40,23 +43,28 @@ export const getReviews = async (req: Request, res: Response) => {
   }
 };
 
-export const getAllReviewsWithUserDetails = async (
-  req: Request,
-  res: Response
-) => {
-  try { 
+export const getAllReviewsWithUserDetails = async (req: Request, res: Response) => {
+  try {
+    const { lang } = req.query as { lang?: string };
     const reviews = await Review.find()
-      .populate("userId", "name image")
+      .populate("userId", "name profilePicture")
       .populate("productId", "name")
       .sort({ createdAt: -1 }).limit(10);
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Reviews fetched successfully",
-        data: reviews,
-      });
+      const translatedReviews = reviews.map((review) => ({
+      id: review._id,
+      comment: review.comment[lang as keyof typeof review.comment] || review.comment.en,
+      userId: review.userId,
+      productId: review.productId,
+      rating: review.rating,
+      createdAt: review.createdAt,
+    }));
+
+    res.status(200).json({
+      success: true,
+      message: "Reviews fetched successfully",
+      data: translatedReviews,
+    });
   } catch (error) {
     res.status(404).json({ success: false, message: "Server error", error });
   }
@@ -117,11 +125,11 @@ export const getAllReviewsWithAverage = async (req: Request, res: Response) => {
 };
 
 // admin apis
-export const getAllReviews = async(req: Request, res: Response) => {
-  try{
+export const getAllReviews = async (req: Request, res: Response) => {
+  try {
     const reviews = await Review.find().populate('userId', 'name').lean();
 
-    if(reviews.length === 0){
+    if (reviews.length === 0) {
       return res.status(404).json({
         success: false,
         status: 404,
@@ -136,7 +144,7 @@ export const getAllReviews = async(req: Request, res: Response) => {
       data: reviews
     });
   }
-  catch(error){
+  catch (error) {
     return res.status(500).json({
       success: false,
       status: 500,
@@ -147,12 +155,12 @@ export const getAllReviews = async(req: Request, res: Response) => {
 };
 
 // delete review
-export const deleteReview = async(req: Request, res: Response) => {
-  try{
+export const deleteReview = async (req: Request, res: Response) => {
+  try {
     const reviewId = req.params.reviewId;
 
     const review = await Review.findByIdAndDelete(reviewId);
-    if(!review){
+    if (!review) {
       return res.status(404).json({
         success: false,
         status: 404,
@@ -166,7 +174,7 @@ export const deleteReview = async(req: Request, res: Response) => {
       message: "Feedback deleted successfully!",
     })
   }
-  catch(error){
+  catch (error) {
     return res.status(500).json({
       success: false,
       status: 500,
