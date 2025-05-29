@@ -12,19 +12,19 @@ interface AuthRequest extends Request {
 
 export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.userId ; // Temp fallback
+    const userId = req.user?.userId;
 
     if (!userId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const { address, productId, quantity, cardnumber, expmonth, expyear } =
-      req.body;
+    const { address, productId, quantity, cardnumber, expmonth, expyear } = req.body;
 
-    if (!address || !cardnumber) {
+    // Strong validation
+    if (!address || !cardnumber || !expmonth || !expyear) {
       return res.status(400).json({
         success: false,
-        message: "Address and card details are required",
+        message: "Address and complete card details are required",
       });
     }
 
@@ -49,13 +49,9 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
         price: discountedPrice,
       });
     } else {
-      const cart = await Cart.findOne({ user: userId }).populate(
-        "items.product"
-      );
+      const cart = await Cart.findOne({ user: userId }).populate("items.product");
       if (!cart || cart.items.length === 0) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Cart is empty" });
+        return res.status(400).json({ success: false, message: "Cart is empty" });
       }
 
       items = cart.items.map((item) => {
@@ -73,13 +69,12 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
     }
 
     const totalAmount = Number(
-      items
-        .reduce((total, item) => total + item.quantity * item.price, 0)
-        .toFixed(2)
+      items.reduce((total, item) => total + item.quantity * item.price, 0).toFixed(2)
     );
 
+    // Only process payment AFTER validations and calculations
     const paymentResult = await makePayment({
-      amount: totalAmount /**temporary amount can be used to test this */,
+      amount: totalAmount,
       cardnumber,
       expmonth,
       expyear,
@@ -93,6 +88,7 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    // Only now proceed to create order
     const order = await Order.create({
       user: userId,
       items,
@@ -106,6 +102,7 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       },
     });
 
+    // Only after successful order creation, update stock and clear cart
     for (const item of items) {
       await Product.findByIdAndUpdate(item.product, {
         $inc: { quantity: -item.quantity, salesCount: item.quantity },
@@ -123,18 +120,12 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
         const populatedItems = await Promise.all(
           items.map(async (item) => {
             const product = await Product.findById(item.product).lean();
-            return {
-              ...item,
-              product,
-            };
+            return { ...item, product };
           })
         );
 
         await sendOrderConfirmationEmail({
-          user: {
-            name: user.name,
-            email: user.email,
-          },
+          user: { name: user.name, email: user.email },
           address,
           order,
           items: populatedItems,
