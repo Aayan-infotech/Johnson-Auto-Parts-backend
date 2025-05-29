@@ -333,7 +333,7 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
       compatibleVehicles,
       removedImages,
     } = req.body;
-
+    const latestImgs=JSON.parse(removedImages)
     const productImages = req.fileLocations || [];
 
     const existingProduct = await Product.findById(productId);
@@ -379,8 +379,8 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
     // --- Image Update Logic ---
     let updatedImages = existingProduct.picture || [];
 
-    if (removedImages && Array.isArray(removedImages)) {
-      const removeSet = new Set(removedImages); // exact match
+    if (latestImgs && Array.isArray(latestImgs)) {
+      const removeSet = new Set(latestImgs); // exact match
       updatedImages = updatedImages.filter((imgUrl) => !removeSet.has(imgUrl));
     }
 
