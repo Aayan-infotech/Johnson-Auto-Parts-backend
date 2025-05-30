@@ -333,115 +333,62 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
       compatibleVehicles,
       removedImages,
     } = req.body;
-
+    const latestImgs=JSON.parse(removedImages)
     const productImages = req.fileLocations || [];
 
-    // Find the existing product
     const existingProduct = await Product.findById(productId);
     if (!existingProduct) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Product not found" });
+      return res.status(404).json({ success: false, message: "Product not found" });
     }
 
-    // -------- Validate and Normalize Categories -------- //
-    let validCategory = category;
-    if (category && category !== "N/A") {
-      if (!mongoose.isValidObjectId(category)) {
-        validCategory = null;
-      } else {
-        const exists = await Category.findById(category);
-        if (!exists) validCategory = null;
-      }
-    } else {
-      validCategory = null;
-    }
+    // --- Validate Categories ---
+    const isValidId = (id: string) => mongoose.isValidObjectId(id);
+    const getValidCategory = async (id: string | null) =>
+      id && id !== "N/A" && isValidId(id) && await Category.findById(id) ? id : null;
+    const getValidSubcategory = async (id: string | null) =>
+      id && id !== "N/A" && isValidId(id) && await Subcategory.findById(id) ? id : null;
+    const getValidSubSubcategory = async (id: string | null) =>
+      id && id !== "N/A" && isValidId(id) && await SubSubcategory.findById(id) ? id : null;
 
-    let validSubCategory = subCategory;
-    if (subCategory && subCategory !== "N/A") {
-      if (!mongoose.isValidObjectId(subCategory)) {
-        validSubCategory = null;
-      } else {
-        const exists = await Subcategory.findById(subCategory);
-        if (!exists) validSubCategory = null;
-      }
-    } else {
-      validSubCategory = null;
-    }
+    const validCategory = await getValidCategory(category);
+    const validSubCategory = await getValidSubcategory(subCategory);
+    const validSubSubCategory = await getValidSubSubcategory(subSubCategory);
 
-    let validSubSubCategory = subSubCategory;
-    if (subSubCategory && subSubCategory !== "N/A") {
-      if (!mongoose.isValidObjectId(subSubCategory)) {
-        validSubSubCategory = null;
-      } else {
-        const exists = await SubSubcategory.findById(subSubCategory);
-        if (!exists) validSubSubCategory = null;
-      }
-    } else {
-      validSubSubCategory = null;
-    }
+    // --- Translations ---
+    const updatedName = name ? { en: name, fr: await translateText(name, "fr") } : existingProduct.name;
+    const updatedDescription = description ? { en: description, fr: await translateText(description, "fr") } : existingProduct.description;
+    const updatedBrand = brand ? { en: brand, fr: await translateText(brand, "fr") } : existingProduct.brand;
 
-    // -------- Translation logic -------- //
-    const updatedName = name
-      ? { en: name, fr: await translateText(name, "fr") }
-      : existingProduct.name;
-
-    const updatedDescription = description
-      ? { en: description, fr: await translateText(description, "fr") }
-      : existingProduct.description;
-
-    const updatedBrand = brand
-      ? { en: brand, fr: await translateText(brand, "fr") }
-      : existingProduct.brand;
-
-    // -------- Compatible Vehicles -------- //
+    // --- Compatible Vehicles ---
     let updatedCompatibleVehicles = existingProduct.compatibleVehicles;
     if (compatibleVehicles) {
       try {
         updatedCompatibleVehicles =
-          typeof compatibleVehicles === "string"
-            ? JSON.parse(compatibleVehicles)
-            : compatibleVehicles;
+          typeof compatibleVehicles === "string" ? JSON.parse(compatibleVehicles) : compatibleVehicles;
       } catch (err) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid format for compatibleVehicles.",
-        });
+        return res.status(400).json({ success: false, message: "Invalid format for compatibleVehicles." });
       }
     }
 
-    // -------- Price -------- //
+    // --- Price ---
     const updatedPrice = {
       actualPrice: price ?? existingProduct.price.actualPrice,
       discountPercent: discount ?? existingProduct.price.discountPercent,
     };
 
+    // --- Image Update Logic ---
     let updatedImages = existingProduct.picture || [];
 
-    if (removedImages && Array.isArray(removedImages)) {
-      const normalizeUrl = (url: string) => {
-        try {
-          const parsedUrl = new URL(url);
-          return parsedUrl.pathname.replace(/^\/+/, ""); // Remove leading slashes
-        } catch {
-          return url.trim();
-        }
-      };
-
-      const removeSet = new Set(removedImages.map(normalizeUrl));
-
-      updatedImages = updatedImages.filter((imgUrl) => {
-        const normalized = normalizeUrl(imgUrl);
-        const keep = !removeSet.has(normalized);
-        if (!keep) console.log("Removing image:", imgUrl);
-        return keep;
-      });
+    if (latestImgs && Array.isArray(latestImgs)) {
+      const removeSet = new Set(latestImgs); // exact match
+      updatedImages = updatedImages.filter((imgUrl) => !removeSet.has(imgUrl));
     }
 
     if (productImages.length > 0) {
       updatedImages = [...updatedImages, ...productImages];
     }
-    // -------- Prepare update data -------- //
+
+    // --- Final Update Data ---
     const updateData = {
       name: updatedName,
       description: updatedDescription,
@@ -458,7 +405,6 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
       compatibleVehicles: updatedCompatibleVehicles,
     };
 
-    // -------- Update product -------- //
     const updatedProduct = await Product.findByIdAndUpdate(
       productId,
       { $set: updateData },
