@@ -22,11 +22,20 @@ export interface IPayment {
   transactionId?: string; // Optional, only exists if payment is completed
 }
 
+export interface IOrderStatusHistory {
+  status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+  date: Date;
+  // Optional: You can add more fields like changedBy or notes if needed
+  // changedBy?: Types.ObjectId;
+  // notes?: string;
+}
+
 export interface IOrder extends Document {
   user: Types.ObjectId;
   items: IOrderItem[]; 
   totalAmount: number;
   status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+  statusHistory: IOrderStatusHistory[];
   address: IAddress; 
   payment: IPayment; 
   createdAt: Date;

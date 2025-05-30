@@ -17,6 +17,17 @@ const OrderSchema = new Schema<IOrder>(
       enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
       default: "pending",
     },
+    statusHistory: [{
+      status: {
+        type: String,
+        enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
+        required: true
+      },
+      date: {
+        type: Date,
+        default: Date.now
+      },
+    }],
     address: {
       fullName: { type: String, required: true },
       street: { type: String, required: true },
