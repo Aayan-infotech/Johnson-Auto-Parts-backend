@@ -246,12 +246,30 @@ export const trackOwnOrderStatus = async (req: Request, res: Response) => {
       });
     }
 
+    // Optional: define messages for different statuses
+    const statusMessages: Record<string, string> = {
+      pending: "Your order is pending...",
+      processing: "Your order is being processed...",
+      shipped: "Your order has been shipped...",
+      delivered: "Your order has been delivered.",
+      cancelled: "Your order has been cancelled.",
+    };
+
+    // Enhance statusHistory with messages
+    const enhancedStatusHistory = (order.statusHistory || []).map((entry: any) => ({
+      ...entry.toObject?.() || entry,
+      message: statusMessages[entry.status] || "Status update",
+    }));
+
     // Return order details
     res.status(200).json({
       success: true,
       status: 200,
       message: "Order details fetched successfully",
-      data: order,
+      data: {
+        ...order.toObject(),
+        statusHistory: enhancedStatusHistory,
+      },
     });
   } catch (error) {
     console.error("Error tracking order:", error);
@@ -283,7 +301,7 @@ export const changeOrderStatus = async (req: Request, res: Response) => {
       status: order.status,
       date: new Date()
     });
-    
+
     order.status = status || order.status;
     await order.save();
 
