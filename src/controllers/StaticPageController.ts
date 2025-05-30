@@ -37,7 +37,8 @@ const getStaticPage = async (req: Request, res: Response) => {
         }
         const translatedContent = {
             id: content._id,
-            content: translatedContentText
+            key: content.key,
+            content: translatedContentText,
         };
 
         res.status(200).json({
@@ -63,10 +64,22 @@ const updateStaticPage = async (req: Request, res: Response) => {
     try {
         const slug = req.params.slug;
         const { key, content } = req.body;
-        const existing = await StaticPage.findOne({ slug });
-
+        
+        // Get the English content (either directly from string or from content.en)
         const contentEn = typeof content === 'string' ? content : content.en;
-        const contentFr = existing?.content?.fr || await translateText(contentEn, "fr");
+        
+        // Translate to French
+        let contentFr;
+        try {
+            contentFr = await translateText(contentEn, "fr");
+        } catch (translationError) {
+            console.error("Translation failed:", translationError);
+            // Fall back to existing French content or English content if translation fails
+            const existing = await StaticPage.findOne({ slug });
+            contentFr = existing?.content?.fr || contentEn;
+        }
+
+        // Update or create the document
         const updated = await StaticPage.findOneAndUpdate(
             { slug },
             {
@@ -79,7 +92,6 @@ const updateStaticPage = async (req: Request, res: Response) => {
             },
             { upsert: true, new: true }
         );
-
 
         res.status(200).json({
             success: true,

@@ -12,6 +12,7 @@ interface AuthRequest extends Request {
 
 export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
+
     const userId = req.user?.userId;
 
     if (!userId) {
@@ -269,6 +270,12 @@ export const changeOrderStatus = async (req: Request, res: Response) => {
       });
     }
 
+    // Add to history
+    order.statusHistory.push({
+      status: order.status,
+      date: new Date()
+    });
+    
     order.status = status || order.status;
     await order.save();
 
