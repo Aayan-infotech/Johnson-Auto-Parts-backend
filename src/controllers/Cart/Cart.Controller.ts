@@ -36,7 +36,7 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
     if (!product) {
       return res
         .status(404)
-        .json({ success: false, message: "Product not found" })
+        .json({ success: false, message: "Product not found" });
     }
 
     if (quantity > product.quantity) {
@@ -172,10 +172,37 @@ export const getCart = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    // GUEST MODE CART HANDLING
+    const guestCart = req.session.cart || { items: [], totalPrice: 0,totalDiscountPercentage:0 };
+
+    // Enrich items with full product data
+    const enrichedItems = await Promise.all(
+      guestCart.items.map(async (item: any) => {
+        const product = await Product.findById(item.productId);
+
+        if (!product) return null;
+
+        return {
+          _id: item._id || new mongoose.Types.ObjectId(),
+          product,
+          quantity: item.quantity,
+          price: item.price,
+          discountPercent: item.discountPercent,
+          name: product.name,
+        };
+      })
+    );
+
+    const filteredItems = enrichedItems.filter(Boolean);
+
     return res.status(200).json({
       success: true,
       message: "Cart fetched successfully (Guest)",
-      cart: req.session.cart || { items: [], totalPrice: 0 },
+      cart: {
+        items: filteredItems,
+        totalPrice: guestCart.totalPrice,
+        totalDiscountPercentage: guestCart.totalDiscountPercentage,
+      },
     });
   } catch (error) {
     res.status(500).json({
@@ -195,22 +222,32 @@ export const updateCart = async (req: AuthRequest, res: Response) => {
     if (req.user) {
       const existingUser = await User.findOne({ _id: req.user.userId });
       if (!existingUser) {
-        return res.status(404).json({ success: false, message: "User not found" });
+        return res
+          .status(404)
+          .json({ success: false, message: "User not found" });
       }
 
       const cart = await Cart.findOne({ user: existingUser._id });
       if (!cart) {
-        return res.status(404).json({ success: false, message: "Cart not found" });
+        return res
+          .status(404)
+          .json({ success: false, message: "Cart not found" });
       }
 
-      const item = cart.items.find((item) => item.product.toString() === productId);
+      const item = cart.items.find(
+        (item) => item.product.toString() === productId
+      );
       if (!item) {
-        return res.status(404).json({ success: false, message: "Product not in cart" });
+        return res
+          .status(404)
+          .json({ success: false, message: "Product not in cart" });
       }
 
       const product = await Product.findById(productId);
       if (!product || quantity > product.quantity) {
-        return res.status(409).json({ success: false, message: "Insufficient stock available" });
+        return res
+          .status(409)
+          .json({ success: false, message: "Insufficient stock available" });
       }
 
       item.quantity = quantity;
@@ -225,23 +262,33 @@ export const updateCart = async (req: AuthRequest, res: Response) => {
       );
       await cart.save();
 
-      return res.status(200).json({ success: true, message: "Cart updated successfully", cart });
+      return res
+        .status(200)
+        .json({ success: true, message: "Cart updated successfully", cart });
     }
 
     if (!req.session.cart) {
-      return res.status(404).json({ success: false, message: "Cart not found (Guest)" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Cart not found (Guest)" });
     }
 
     const cart = req.session.cart;
-    const item = cart.items.find((item) => item.productId.toString() === productId);
+    const item = cart.items.find(
+      (item) => item.productId.toString() === productId
+    );
 
     if (!item) {
-      return res.status(404).json({ success: false, message: "Product not in cart" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not in cart" });
     }
 
     const product = await Product.findById(productId);
     if (!product || quantity > product.quantity) {
-      return res.status(409).json({ success: false, message: "Insufficient stock available" });
+      return res
+        .status(409)
+        .json({ success: false, message: "Insufficient stock available" });
     }
 
     item.quantity = quantity;
@@ -257,7 +304,13 @@ export const updateCart = async (req: AuthRequest, res: Response) => {
     req.session.cart = cart;
     await req.session.save();
 
-    return res.status(200).json({ success: true, message: "Cart updated successfully (Guest)", cart });
+    return res
+      .status(200)
+      .json({
+        success: true,
+        message: "Cart updated successfully (Guest)",
+        cart,
+      });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -277,10 +330,14 @@ export const removeFromCart = async (req: AuthRequest, res: Response) => {
     if (req.user) {
       const cart = await Cart.findOne({ user: req.user.userId });
       if (!cart) {
-        return res.status(404).json({ success: false, message: "Cart not found" });
+        return res
+          .status(404)
+          .json({ success: false, message: "Cart not found" });
       }
 
-      cart.items = cart.items.filter((item) => item.product.toString() !== productId);
+      cart.items = cart.items.filter(
+        (item) => item.product.toString() !== productId
+      );
       cart.totalPrice = cart.items.reduce(
         (total, item) => total + item.price * item.quantity,
         0
@@ -291,13 +348,19 @@ export const removeFromCart = async (req: AuthRequest, res: Response) => {
       );
 
       await cart.save();
-      return res.status(200).json({ success: true, message: "Product removed from cart", cart });
+      return res
+        .status(200)
+        .json({ success: true, message: "Product removed from cart", cart });
     } else {
       if (!req.session.cart) {
-        return res.status(404).json({ success: false, message: "Cart not found" });
+        return res
+          .status(404)
+          .json({ success: false, message: "Cart not found" });
       }
 
-      req.session.cart.items = req.session.cart.items.filter((item) => item.productId !== productId);
+      req.session.cart.items = req.session.cart.items.filter(
+        (item) => item.productId !== productId
+      );
       req.session.cart.totalPrice = req.session.cart.items.reduce(
         (total, item) => total + item.price * item.quantity,
         0
@@ -331,18 +394,24 @@ export const clearCart = async (req: AuthRequest, res: Response) => {
     if (req.user) {
       const existingUser = await User.findOne({ userId: req.user.userId });
       if (!existingUser) {
-        return res.status(404).json({ success: false, message: "User not found" });
+        return res
+          .status(404)
+          .json({ success: false, message: "User not found" });
       }
 
       await Cart.findOneAndDelete({ user: existingUser._id });
 
-      return res.status(200).json({ success: true, message: "Cart cleared successfully" });
+      return res
+        .status(200)
+        .json({ success: true, message: "Cart cleared successfully" });
     }
 
     req.session.cart = { items: [], totalPrice: 0, totalDiscountPercentage: 0 };
     await req.session.save();
 
-    return res.status(200).json({ success: true, message: "Cart cleared successfully (Guest)" });
+    return res
+      .status(200)
+      .json({ success: true, message: "Cart cleared successfully (Guest)" });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -351,4 +420,3 @@ export const clearCart = async (req: AuthRequest, res: Response) => {
     });
   }
 };
-
