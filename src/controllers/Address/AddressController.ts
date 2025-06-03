@@ -1,100 +1,309 @@
 import { Request, Response } from 'express';
 import Address from '../../models/AddressModel';
-// import { IAddress } from '../../models/interfaces/IAddress';
+import { IAddress, AddressType } from '../../models/interfaces/IAddress';
 import User from '../../models/User';
+import { Types } from 'mongoose';
+
 interface AuthRequest extends Request {
-  user?: { userId: string; email: string };
+    user?: { userId: string; email: string };
 }
 
-export const createAddress = async (req: AuthRequest, res: Response) => {
-  try {
-    const { fullName, street, city, state, postalCode, country, phoneNumber } = req.body;
-    const userId = req.user?.userId; // Assuming you have authentication middleware that adds user to request
+// Create or Update Address Document
+// export const createOrUpdateAddress = async (req: AuthRequest, res: Response) => {
+//     try {
+//         const userId = req.user?.userId;
+//         const { billingAddress, shippingAddress } = req.body;
 
-    const newAddress = new Address({
-      fullName,
-      street,
-      city,
-      state,
-      postalCode,
-      country,
-      phoneNumber,
-      user: userId
-    });
+//         const existingAddress = await Address.findOne({ user: userId }); 
 
-    const savedAddress = await newAddress.save();
-    res.status(201).json({
-        success: true, 
-        status: 201, 
-        message: "Address created successfully!"
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Error creating address', error });
-  }
-};
+//         // Upsert the address document
+//         const address = await Address.findOneAndUpdate(
+//             { user: userId },
+//             {
+//                 user: userId,
+//                 billingAddress,
+//                 shippingAddress
+//             },
+//             {
+//                 new: true,
+//                 upsert: true // Create if doesn't exist
+//             }
+//         );
+
+//         res.status(200).json({
+//             success: true,
+//             status: 200,
+//             message: existingAddress ? "Address updated successfully!" : "Address created successfully!",
+//             data: address
+//         });
+//     } catch (error) {
+//         res.status(500).json({ message: 'Error saving addresses', error });
+//     }
+// };
+
+interface CreateAddressParams {
+    fullName: string;
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    phoneNumber: string;
+    type: AddressType;
+    userId: string;
+}
+
+export async function createAddress(params: CreateAddressParams) {
+    try {
+        const { 
+            fullName, 
+            street, 
+            city, 
+            state, 
+            postalCode, 
+            country, 
+            phoneNumber, 
+            type, 
+            userId 
+        } = params;
+
+        const newAddress = new Address({
+            fullName,
+            street,
+            city,
+            state,
+            postalCode,
+            country,
+            phoneNumber,
+            addressType: type,
+            user: userId
+        });
+
+        const savedAddress = await newAddress.save();
+        
+        return {
+            success: true,
+            status: 201,
+            message: `${type} address created successfully`,
+            data: savedAddress
+        };
+    } catch (error) {
+        throw {
+            success: false,
+            status: 500,
+            message: 'Error creating address',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        };
+    }
+}
 
 export const getAddresses = async (req: AuthRequest, res: Response) => {
-  try {
-    const userId = req.user?.userId; // Get addresses for the authenticated user
-    const user = await User.findById(userId)
-    if(!user){
-        return res.status(404).json({
-            success: false,
-            status: 404,
-            message: "User not found!"
-        })
+    try {
+        const userId = req.user?.userId; // Get addresses for the authenticated user
+        const user = await User.findById(userId)
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                status: 404,
+                message: "User not found!"
+            })
+        }
+        const addresses = await Address.find({ user: userId });
+        res.status(200).json({
+            success: true,
+            status: 200,
+            message: "Address fetched successfully!",
+            data: addresses
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching addresses', error });
     }
-    const addresses = await Address.find({ user: userId });
-    res.status(200).json({
-        success: true,
-        status: 200,
-        message: "Address fetched successfully!",
-        data: addresses
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching addresses', error });
-  }
 };
 
 export const getAddressById = async (req: AuthRequest, res: Response) => {
-  try {
-    const address = await Address.findOne({
-      _id: req.params.id,
-      user: req.user?.userId // Ensure the address belongs to the authenticated user
-    });
+    try {
+        const address = await Address.findOne({
+            _id: req.params.id,
+            user: req.user?.userId // Ensure the address belongs to the authenticated user
+        });
 
-    if (!address) {
-      return res.status(404).json({ message: 'Address not found' });
+        if (!address) {
+            return res.status(404).json({ message: 'Address not found' });
+        }
+
+        res.status(200).json({
+            success: true,
+            status: 200,
+            message: "Address fethced successfully!",
+            data: address
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching address', error });
     }
-
-    res.status(200).json({
-        success: true,
-        status: 200,
-        message: "Address fethced successfully!",
-        data: address
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching address', error });
-  }
 };
 
 export const deleteAddress = async (req: AuthRequest, res: Response) => {
-  try {
-    const address = await Address.findOneAndDelete({
-      _id: req.params.id,
-      user: req.user?.userId // Ensure the address belongs to the authenticated user
-    });
+    try {
+        const { id } = req.params;
 
-    if (!address) {
-      return res.status(404).json({ message: 'Address not found' });
+        const deletedAddress = await Address.findOneAndDelete({
+            _id: id,
+            user: req.user?.userId
+        });
+
+        if (!deletedAddress) {
+            return res.status(404).json({
+                success: false,
+                message: 'Address not found'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            status: 200,
+            message: `${deletedAddress.addressType} address deleted successfully`
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error deleting address',
+            error
+        });
     }
-
-    res.status(200).json({ 
-        success: true,
-        status: 200,
-        message: 'Address deleted successfully!'
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Error deleting address', error });
-  }
 };
+
+// Get addresses by type
+export const getAddressesByType = async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        
+        // Get all addresses grouped by type in a single query
+        const addresses = await Address.aggregate([
+            { $match: { user: new Types.ObjectId(userId) } },
+            { $group: {
+                _id: "$addressType",
+                addresses: { $push: "$$ROOT" }
+            }},
+            { $project: {
+                type: "$_id",
+                addresses: 1,
+                _id: 0
+            }}
+        ]);
+
+        // Convert array to object with types as keys
+        const result = addresses.reduce((acc, curr) => {
+            acc[curr.type] = curr.addresses;
+            return acc;
+        }, {} as Record<string, typeof addresses>);
+
+        // Ensure both types exist in response
+        const organizedAddresses = {
+            billing: result.billing || [],
+            shipping: result.shipping || []
+        };
+
+        res.status(200).json({
+            success: true,
+            status: 200,
+            data: organizedAddresses
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            success: false,
+            message: 'Error fetching addresses', 
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+};
+
+// Update specific address
+export const updateAddress = async (req: AuthRequest, res: Response) => {
+    try {
+        const { id } = req.params;
+        const updateData = req.body;
+
+        const updatedAddress = await Address.findOneAndUpdate(
+            {
+                _id: id,
+                user: req.user?.userId // Ensure user owns the address
+            },
+            updateData,
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedAddress) {
+            return res.status(404).json({
+                success: false,
+                message: 'Address not found'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            status: 200,
+            message: `${updatedAddress.addressType} address updated successfully`,
+            data: updatedAddress
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error updating address',
+            error
+        });
+    }
+};
+
+// Update Billing Address Only
+// export const updateBillingAddress = async (req: AuthRequest, res: Response) => {
+//     try {
+//         const address = await Address.findOneAndUpdate(
+//             { user: req.user?.userId },
+//             { billingAddress: req.body },
+//             { new: true }
+//         );
+
+//         if (!address) {
+//             return res.status(404).json({
+//                 success: false,
+//                 status: 404,
+//                 message: 'Address document not found'
+//             });
+//         }
+
+//         res.status(200).json({
+//             success: true,
+//             status: 200,
+//             message: "Billing address updated successfully!"
+//         });
+//     } catch (error) {
+//         res.status(500).json({ message: 'Error updating billing address', error });
+//     }
+// };
+
+// // Update Shipping Address Only
+// export const updateShippingAddress = async (req: AuthRequest, res: Response) => {
+//     try {
+//         const address = await Address.findOneAndUpdate(
+//             { user: req.user?.userId },
+//             { shippingAddress: req.body },
+//             { new: true }
+//         );
+
+//         if (!address) {
+//             return res.status(404).json({
+//                 success: true,
+//                 status: 200,
+//                 message: 'Address document not found'
+//             });
+//         }
+
+//         res.status(200).json({
+//             success: true,
+//             status: 200,
+//             message: "Shipping Address updated successfully!"
+//         });
+//     } catch (error) {
+//         res.status(500).json({ message: 'Error updating shipping address', error });
+//     }
+// };

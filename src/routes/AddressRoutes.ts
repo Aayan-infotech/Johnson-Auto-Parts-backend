@@ -1,28 +1,26 @@
 import express from 'express';
 import {
+  // createOrUpdateAddress,
   createAddress,
   getAddresses,
   getAddressById,
-  deleteAddress
+  deleteAddress,
+  updateAddress,
+  getAddressesByType
+  // updateBillingAddress,
+  // updateShippingAddress
 } from '../controllers/Address/AddressController';
-// import { authenticate } from '../middlewares/auth.middleware'; // Assuming you have authentication middleware
-
 const router = express.Router();
 
 const  {verifyAccessToken} = require("../middleware/authMiddleware");
-// Protect all routes with authentication
-// router.use(authenticate);
 
-// Create a new address
 router.post('/', verifyAccessToken, createAddress);
-
-// Get all addresses for the authenticated user
 router.get('/', verifyAccessToken, getAddresses);
-
-// Get a specific address by ID
 router.get('/:id', getAddressById);
-
-// Delete an address
 router.delete('/:id', verifyAccessToken, deleteAddress);
+router.put('/:id', verifyAccessToken, updateAddress);
+router.get('/type', verifyAccessToken, getAddressesByType);
+// router.patch('/billing', updateBillingAddress); 
+// router.patch('/shipping', updateShippingAddress);
 
 export default router;
