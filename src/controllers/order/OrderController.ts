@@ -89,10 +89,10 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // const totalAmount = Number(
-    //   items.reduce((total, item) => total + item.quantity * item.price, 0).toFixed(2)
-    // );
-    const totalAmount = Number(4.2);
+    const totalAmount = Number(
+      items.reduce((total, item) => total + item.quantity * item.price, 0).toFixed(2)
+    );
+    // const totalAmount = Number(totalAmount);
 
     // ✅ Process payment after validation
     const paymentResult = await makePayment({
