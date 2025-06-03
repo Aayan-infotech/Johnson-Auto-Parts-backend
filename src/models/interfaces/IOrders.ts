@@ -36,7 +36,7 @@ export interface IOrder extends Document {
   totalAmount: number;
   status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
   statusHistory: IOrderStatusHistory[];
-  address: IAddress; 
+  address?: Types.ObjectId; 
   payment: IPayment; 
   createdAt: Date;
   updatedAt: Date;

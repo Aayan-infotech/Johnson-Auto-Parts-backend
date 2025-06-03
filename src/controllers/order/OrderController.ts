@@ -88,7 +88,7 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
         error: paymentResult.description,
       });
     }
-
+      
     // Only now proceed to create order
     const order = await Order.create({
       user: userId,
