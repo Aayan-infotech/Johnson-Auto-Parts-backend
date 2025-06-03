@@ -5,6 +5,7 @@ import Cart from "../../models/CartModel";
 import Product from "../../models/ProductModel";
 import { makePayment } from "../../utills/SlimCDService";
 import { sendOrderConfirmationEmail } from "../../utills/SendOrderCreationEmail";
+import { createAddress } from "../Address/AddressController"; // adjust path accordingly
 
 interface AuthRequest extends Request {
   user?: { userId: string; email: string };
@@ -12,22 +13,37 @@ interface AuthRequest extends Request {
 
 export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
-
     const userId = req.user?.userId;
 
     if (!userId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const { address, productId, quantity, cardnumber, expmonth, expyear } = req.body;
+    const { address, productId, quantity, cardnumber, expmonth, expyear } =
+      req.body;
 
-    // Strong validation
     if (!address || !cardnumber || !expmonth || !expyear) {
       return res.status(400).json({
         success: false,
         message: "Address and complete card details are required",
       });
     }
+
+    // ✅ Step 1: Create address using the service
+    const addressResponse = await createAddress({
+      ...address,
+      userId,
+    });
+
+    if (!addressResponse.success) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to save address",
+        error: addressResponse.message,
+      });
+    }
+
+    const savedAddress = addressResponse.data; // Contains the saved address document
 
     let items = [];
 
@@ -50,9 +66,13 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
         price: discountedPrice,
       });
     } else {
-      const cart = await Cart.findOne({ user: userId }).populate("items.product");
+      const cart = await Cart.findOne({ user: userId }).populate(
+        "items.product"
+      );
       if (!cart || cart.items.length === 0) {
-        return res.status(400).json({ success: false, message: "Cart is empty" });
+        return res
+          .status(400)
+          .json({ success: false, message: "Cart is empty" });
       }
 
       items = cart.items.map((item) => {
@@ -69,11 +89,12 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const totalAmount = Number(
-      items.reduce((total, item) => total + item.quantity * item.price, 0).toFixed(2)
-    );
+    // const totalAmount = Number(
+    //   items.reduce((total, item) => total + item.quantity * item.price, 0).toFixed(2)
+    // );
+    const totalAmount = Number(4.2);
 
-    // Only process payment AFTER validations and calculations
+    // ✅ Process payment after validation
     const paymentResult = await makePayment({
       amount: totalAmount,
       cardnumber,
@@ -88,14 +109,14 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
         error: paymentResult.description,
       });
     }
-      
-    // Only now proceed to create order
+
+    // ✅ Step 2: Create order using the saved address._id
     const order = await Order.create({
       user: userId,
       items,
       totalAmount,
       status: "processing",
-      address,
+      address: savedAddress._id,
       payment: {
         method: "card",
         status: "paid",
@@ -103,7 +124,7 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    // Only after successful order creation, update stock and clear cart
+    // ✅ Update stock
     for (const item of items) {
       await Product.findByIdAndUpdate(item.product, {
         $inc: { quantity: -item.quantity, salesCount: item.quantity },
@@ -127,7 +148,7 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
 
         await sendOrderConfirmationEmail({
           user: { name: user.name, email: user.email },
-          address,
+          address: savedAddress, // send full address object
           order,
           items: populatedItems,
           totalAmount,
@@ -155,7 +176,9 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
 // get orders for admin panel
 export const getOrders = async (req: Request, res: Response) => {
   try {
-    const orders = await Order.find().populate("user", "name email");
+    const orders = await Order.find()
+      .populate("user", "name email")
+      .populate("address"); // <-- populate address here
 
     if (orders.length === 0) {
       return res.status(200).json({
@@ -177,7 +200,7 @@ export const getOrders = async (req: Request, res: Response) => {
       success: false,
       status: 500,
       message: "Internal server error!",
-      error: error,
+      error,
     });
   }
 };
@@ -185,10 +208,13 @@ export const getOrders = async (req: Request, res: Response) => {
 export const getOrderByUserId = async (req: Request, res: Response) => {
   try {
     const userId = req.params.userId;
-    const orders = await Order.find({ user: userId }).populate({
-      path: "items.product",
-      select: "name price picture",
-    });
+
+    const orders = await Order.find({ user: userId })
+      .populate({
+        path: "items.product",
+        select: "name price picture",
+      })
+      .populate("address"); // <-- populate the address here
 
     if (orders.length === 0) {
       return res.status(200).json({
@@ -210,7 +236,7 @@ export const getOrderByUserId = async (req: Request, res: Response) => {
       success: false,
       status: 500,
       message: "Internal server error!",
-      error: error,
+      error,
     });
   }
 };
@@ -248,10 +274,12 @@ export const trackOwnOrderStatus = async (req: Request, res: Response) => {
     };
 
     // Enhance statusHistory with messages
-    const enhancedStatusHistory = (order.statusHistory || []).map((entry: any) => ({
-      ...entry.toObject?.() || entry,
-      message: statusMessages[entry.status] || "Status update",
-    }));
+    const enhancedStatusHistory = (order.statusHistory || []).map(
+      (entry: any) => ({
+        ...(entry.toObject?.() || entry),
+        message: statusMessages[entry.status] || "Status update",
+      })
+    );
 
     // Return order details
     res.status(200).json({
@@ -291,7 +319,7 @@ export const changeOrderStatus = async (req: Request, res: Response) => {
     // Add to history
     order.statusHistory.push({
       status: order.status,
-      date: new Date()
+      date: new Date(),
     });
 
     order.status = status || order.status;
