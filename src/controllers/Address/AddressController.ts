@@ -55,16 +55,16 @@ interface CreateAddressParams {
 
 export async function createAddress(params: CreateAddressParams) {
     try {
-        const { 
-            fullName, 
-            street, 
-            city, 
-            state, 
-            postalCode, 
-            country, 
-            phoneNumber, 
-            type, 
-            userId 
+        const {
+            fullName,
+            street,
+            city,
+            state,
+            postalCode,
+            country,
+            phoneNumber,
+            type,
+            userId
         } = params;
 
         const newAddress = new Address({
@@ -80,7 +80,7 @@ export async function createAddress(params: CreateAddressParams) {
         });
 
         const savedAddress = await newAddress.save();
-        
+
         return {
             success: true,
             status: 201,
@@ -109,6 +109,7 @@ export const getAddresses = async (req: AuthRequest, res: Response) => {
             })
         }
         const addresses = await Address.find({ user: userId });
+        
         res.status(200).json({
             success: true,
             status: 200,
@@ -176,42 +177,34 @@ export const deleteAddress = async (req: AuthRequest, res: Response) => {
 export const getAddressesByType = async (req: AuthRequest, res: Response) => {
     try {
         const userId = req.user?.userId;
-        
-        // Get all addresses grouped by type in a single query
-        const addresses = await Address.aggregate([
-            { $match: { user: new Types.ObjectId(userId) } },
-            { $group: {
-                _id: "$addressType",
-                addresses: { $push: "$$ROOT" }
-            }},
-            { $project: {
-                type: "$_id",
-                addresses: 1,
-                _id: 0
-            }}
-        ]);
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                status: 404,
+                message: "User not found!"
+            })
+        }
 
-        // Convert array to object with types as keys
-        const result = addresses.reduce((acc, curr) => {
-            acc[curr.type] = curr.addresses;
-            return acc;
-        }, {} as Record<string, typeof addresses>);
+        const addresses = await Address.find({ user: userId });
 
+        // const billingAddresses = await Address.find({user: userId, type: AddressType.BILLING});
+        // const shippingAddress = await Address.find({user: userId, type: AddressType.SHIPPING});
         // Ensure both types exist in response
-        const organizedAddresses = {
-            billing: result.billing || [],
-            shipping: result.shipping || []
-        };
+        // const organizedAddresses = {
+        //     ...billingAddresses  ,
+        //     ...shippingAddress
+        // };
 
         res.status(200).json({
             success: true,
             status: 200,
-            data: organizedAddresses
+            data: addresses
         });
     } catch (error) {
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
-            message: 'Error fetching addresses', 
+            message: 'Error fetching addresses',
             error: error instanceof Error ? error.message : 'Unknown error'
         });
     }
