@@ -98,27 +98,73 @@ export async function createAddress(params: CreateAddressParams) {
     }
 }
 
+// export const getAddresses = async (req: AuthRequest, res: Response) => {
+//     try {
+//         const userId = req.user?.userId; // Get addresses for the authenticated user
+//         const user = await User.findById(userId)
+//         if (!user) {
+//             return res.status(404).json({
+//                 success: false,
+//                 status: 404,
+//                 message: "User not found!"
+//             })
+//         }
+//         const addresses = await Address.find({ user: userId });
+
+//         res.status(200).json({
+//             success: true,
+//             status: 200,
+//             message: "Address fetched successfully!",
+//             data: addresses
+//         });
+//     } catch (error) {
+//         res.status(500).json({ message: 'Error fetching addresses', error });
+//     }
+// };
+
+
 export const getAddresses = async (req: AuthRequest, res: Response) => {
     try {
-        const userId = req.user?.userId; // Get addresses for the authenticated user
-        const user = await User.findById(userId)
+        const userId = req.user?.userId;
+        const user = await User.findById(userId);
+
         if (!user) {
             return res.status(404).json({
                 success: false,
                 status: 404,
                 message: "User not found!"
-            })
+            });
         }
+
         const addresses = await Address.find({ user: userId });
+
+        // Group by addressType
+        const groupedAddresses = addresses.reduce((acc, address) => {
+            if (!acc[address.addressType]) {
+                acc[address.addressType] = [];
+            }
+            acc[address.addressType].push(address);
+            acc[address.addressType].push(address);
+            return acc;
+
+        }, {} as Record<AddressType, IAddress[]>);
 
         res.status(200).json({
             success: true,
             status: 200,
-            message: "Address fetched successfully!",
-            data: addresses
+            message: "Addresses fetched successfully!",
+            // addresses,
+            data: {
+                billing: groupedAddresses[AddressType.BILLING] || [], // Fallback to empty array
+                shipping: groupedAddresses[AddressType.SHIPPING] || []
+            }
         });
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching addresses', error });
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching addresses',
+            error: error instanceof Error ? error.message : "Unknown error"
+        });
     }
 };
 
@@ -174,90 +220,90 @@ export const deleteAddress = async (req: AuthRequest, res: Response) => {
     }
 };
 
-// export const getAddresses = async (req: AuthRequest, res: Response) => {
-//     try {
-//         const userId = req.user?.userId;
-//         const user = await User.findById(userId);
-
-//         if (!user) {
-//             return res.status(404).json({
-//                 success: false,
-//                 status: 404,
-//                 message: "User not found!"
-//             });
-//         }
-
-//         const addresses = await Address.find({ user: userId });
-
-//         // Group by addressType
-//         const groupedAddresses = addresses.reduce((acc, address) => {
-//             if (!acc[address.addressType]) {
-//                 acc[address.addressType] = [];
-//             }
-//             acc[address.addressType].push(address);
-
-//             // console.log(acc[address.addressType])
-//             acc[address.addressType].push(address);
-//             return acc;
-
-//         }, {} as Record<AddressType, IAddress[]>);
-
-//         res.status(200).json({
-//             success: true,
-//             status: 200,
-//             message: "Addresses fetched successfully!",
-//             // addresses
-//             data: {
-//                 billing: groupedAddresses[AddressType.BILLING] || [], // Fallback to empty array
-//                 shipping: groupedAddresses[AddressType.SHIPPING] || []
-//             }
-//         });
-//     } catch (error) {
-//         res.status(500).json({
-//             success: false,
-//             message: 'Error fetching addresses',
-//             error: error instanceof Error ? error.message : "Unknown error"
-//         });
-//     }
-// };
-
-// Get addresses by type
-
-export const getAddressesByType = async (req: AuthRequest, res: Response) => {
+export const getAddressByTypes = async (req: AuthRequest, res: Response) => {
     try {
         const userId = req.user?.userId;
         const user = await User.findById(userId);
+
         if (!user) {
             return res.status(404).json({
                 success: false,
                 status: 404,
                 message: "User not found!"
-            })
+            });
         }
 
         const addresses = await Address.find({ user: userId });
 
-        // const billingAddresses = await Address.find({user: userId, type: AddressType.BILLING});
-        // const shippingAddress = await Address.find({user: userId, type: AddressType.SHIPPING});
-        // Ensure both types exist in response
-        // const organizedAddresses = {
-        //     ...billingAddresses  ,
-        //     ...shippingAddress
-        // };
+        // Group by addressType
+        const groupedAddresses = addresses.reduce((acc, address) => {
+            if (!acc[address.addressType]) {
+                acc[address.addressType] = [];
+            }
+            acc[address.addressType].push(address);
+
+            // console.log(acc[address.addressType])
+            acc[address.addressType].push(address);
+            return acc;
+
+        }, {} as Record<AddressType, IAddress[]>);
 
         res.status(200).json({
             success: true,
             status: 200,
-            data: addresses
+            message: "Addresses fetched successfully!",
+            addresses,
+            // data: {
+            //     billing: groupedAddresses[AddressType.BILLING] || [], // Fallback to empty array
+            //     shipping: groupedAddresses[AddressType.SHIPPING] || []
+            // }
         });
     } catch (error) {
         res.status(500).json({
             success: false,
             message: 'Error fetching addresses',
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : "Unknown error"
         });
     }
 };
+
+// Get addresses by type
+
+// export const getAddressesByType = async (req: AuthRequest, res: Response) => {
+//     try {
+//         const userId = req.user?.userId;
+//         const user = await User.findById(userId);
+//         if (!user) {
+//             return res.status(404).json({
+//                 success: false,
+//                 status: 404,
+//                 message: "User not found!"
+//             })
+//         }
+
+//         const addresses = await Address.find({ user: userId });
+
+//         // const billingAddresses = await Address.find({user: userId, type: AddressType.BILLING});
+//         // const shippingAddress = await Address.find({user: userId, type: AddressType.SHIPPING});
+//         // Ensure both types exist in response
+//         // const organizedAddresses = {
+//         //     ...billingAddresses  ,
+//         //     ...shippingAddress
+//         // };
+
+//         res.status(200).json({
+//             success: true,
+//             status: 200,
+//             data: addresses
+//         });
+//     } catch (error) {
+//         res.status(500).json({
+//             success: false,
+//             message: 'Error fetching addresses',
+//             error: error instanceof Error ? error.message : 'Unknown error'
+//         });
+//     }
+// };
 
 // Update specific address
 export const updateAddress = async (req: AuthRequest, res: Response) => {
