@@ -137,26 +137,26 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
 
     const user = await User.findById(userId);
 
-    if (user?.email) {
-      try {
-        const populatedItems = await Promise.all(
-          items.map(async (item) => {
-            const product = await Product.findById(item.product).lean();
-            return { ...item, product };
-          })
-        );
+    // if (user?.email) {
+    //   try {
+    //     const populatedItems = await Promise.all(
+    //       items.map(async (item) => {
+    //         const product = await Product.findById(item.product).lean();
+    //         return { ...item, product };
+    //       })
+    //     );
 
-        await sendOrderConfirmationEmail({
-          user: { name: user.name, email: user.email },
-          address: savedAddress, // send full address object
-          order,
-          items: populatedItems,
-          totalAmount,
-        });
-      } catch (emailErr) {
-        console.error("Email sending failed:", emailErr);
-      }
-    }
+    //     await sendOrderConfirmationEmail({
+    //       user: { name: user.name, email: user.email },
+    //       address: savedAddress, // send full address object
+    //       order,
+    //       items: populatedItems,
+    //       totalAmount,
+    //     });
+    //   } catch (emailErr) {
+    //     console.error("Email sending failed:", emailErr);
+    //   }
+    // }
 
     return res.status(201).json({
       success: true,
