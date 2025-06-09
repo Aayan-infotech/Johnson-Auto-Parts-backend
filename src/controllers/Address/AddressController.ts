@@ -3,6 +3,7 @@ import Address from '../../models/AddressModel';
 import { IAddress, AddressType } from '../../models/interfaces/IAddress';
 import User from '../../models/User';
 import { Types } from 'mongoose';
+// import { getAddresses } from './AddressController';
 
 interface AuthRequest extends Request {
     user?: { userId: string; email: string };
@@ -49,7 +50,7 @@ interface CreateAddressParams {
     postalCode: string;
     country: string;
     phoneNumber: string;
-    type: AddressType;
+    addressType: AddressType;
     userId: string;
 }
 
@@ -63,7 +64,7 @@ export async function createAddress(params: CreateAddressParams) {
             postalCode,
             country,
             phoneNumber,
-            type,
+            addressType,
             userId
         } = params;
 
@@ -75,7 +76,7 @@ export async function createAddress(params: CreateAddressParams) {
             postalCode,
             country,
             phoneNumber,
-            addressType: type,
+            addressType,
             user: userId
         });
 
@@ -84,7 +85,7 @@ export async function createAddress(params: CreateAddressParams) {
         return {
             success: true,
             status: 201,
-            message: `${type} address created successfully`,
+            message: `${addressType} address created successfully`,
             data: savedAddress
         };
     } catch (error) {
@@ -109,7 +110,7 @@ export const getAddresses = async (req: AuthRequest, res: Response) => {
             })
         }
         const addresses = await Address.find({ user: userId });
-        
+
         res.status(200).json({
             success: true,
             status: 200,
@@ -173,7 +174,55 @@ export const deleteAddress = async (req: AuthRequest, res: Response) => {
     }
 };
 
+// export const getAddresses = async (req: AuthRequest, res: Response) => {
+//     try {
+//         const userId = req.user?.userId;
+//         const user = await User.findById(userId);
+
+//         if (!user) {
+//             return res.status(404).json({
+//                 success: false,
+//                 status: 404,
+//                 message: "User not found!"
+//             });
+//         }
+
+//         const addresses = await Address.find({ user: userId });
+
+//         // Group by addressType
+//         const groupedAddresses = addresses.reduce((acc, address) => {
+//             if (!acc[address.addressType]) {
+//                 acc[address.addressType] = [];
+//             }
+//             acc[address.addressType].push(address);
+
+//             // console.log(acc[address.addressType])
+//             acc[address.addressType].push(address);
+//             return acc;
+
+//         }, {} as Record<AddressType, IAddress[]>);
+
+//         res.status(200).json({
+//             success: true,
+//             status: 200,
+//             message: "Addresses fetched successfully!",
+//             // addresses
+//             data: {
+//                 billing: groupedAddresses[AddressType.BILLING] || [], // Fallback to empty array
+//                 shipping: groupedAddresses[AddressType.SHIPPING] || []
+//             }
+//         });
+//     } catch (error) {
+//         res.status(500).json({
+//             success: false,
+//             message: 'Error fetching addresses',
+//             error: error instanceof Error ? error.message : "Unknown error"
+//         });
+//     }
+// };
+
 // Get addresses by type
+
 export const getAddressesByType = async (req: AuthRequest, res: Response) => {
     try {
         const userId = req.user?.userId;
