@@ -54,6 +54,7 @@ export const uploadToS3 = async (
       req.fileLocations = fileLocations;
       return next();
     } catch (uploadError) {
+      console.log(uploadError)
       return res.status(500).json({ error: (uploadError as Error).message });
     }
   });
