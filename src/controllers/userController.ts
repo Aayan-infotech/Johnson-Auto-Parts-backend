@@ -28,16 +28,33 @@ const signUp = async (req: Request, res: Response): Promise<Response> => {
 
     if (!name || !email || !mobile || !password) {
       return res.status(400).json({
-        message: "All fields are required",
+        message: "All fields (name, email, mobile, password) are required",
+        status: 400,
+      });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        message: "Invalid email format",
+        status: 400,
+      });
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        message:
+          "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character",
         status: 400,
       });
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(402).json({
+      return res.status(409).json({
         message: "User already exists",
-        status: 402,
+        status: 409,
       });
     }
 
@@ -52,9 +69,9 @@ const signUp = async (req: Request, res: Response): Promise<Response> => {
 
     await newUser.save();
 
-    return res.status(200).json({
+    return res.status(201).json({
       message: "User registered successfully",
-      status: 200,
+      status: 201,
     });
   } catch (error) {
     return res.status(500).json({
