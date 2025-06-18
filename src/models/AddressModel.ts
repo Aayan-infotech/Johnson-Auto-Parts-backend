@@ -22,33 +22,3 @@ const addressSchema = new Schema<IAddress>({
 
 const Address = model<IAddress>('Address', addressSchema);
 export default Address;
-
-// import { Schema, model } from 'mongoose';
-// import { IAddress } from '../models/interfaces/IAddress';
-
-// const addressSchema = new Schema<IAddress>({
-//     user: { type: Schema.Types.ObjectId, ref: 'User' }, // Assuming you have a User model
-//     billingAddress: {
-//         fullName: { type: String, required: true },
-//         street: { type: String, required: true },
-//         city: { type: String, required: true },
-//         state: { type: String, required: true },
-//         postalCode: { type: String, required: true },
-//         country: { type: String, required: true },
-//         phoneNumber: { type: String, required: true },
-//     },
-//     shippingAddress: {
-//         fullName: { type: String, required: true },
-//         street: { type: String, required: true },
-//         city: { type: String, required: true },
-//         state: { type: String, required: true },
-//         postalCode: { type: String, required: true },
-//         country: { type: String, required: true },
-//         phoneNumber: { type: String, required: true },
-//     }
-// }, {
-//     timestamps: true // Adds createdAt and updatedAt fields
-// });
-
-// const Address = model<IAddress>('Address', addressSchema);
-// export default Address;

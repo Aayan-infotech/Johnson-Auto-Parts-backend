@@ -214,7 +214,7 @@ export const getOrderByUserId = async (req: Request, res: Response) => {
         path: "items.product",
         select: "name price picture",
       })
-      .populate("address"); // <-- populate the address here
+      .populate("address"); 
 
     if (orders.length === 0) {
       return res.status(200).json({
@@ -340,3 +340,4 @@ export const changeOrderStatus = async (req: Request, res: Response) => {
     });
   }
 };
+  
