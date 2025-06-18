@@ -193,7 +193,7 @@ export const getOrders = async (req: Request, res: Response) => {
   try {
     const orders = await Order.find()
       .populate("user", "name email")
-      .populate("address"); // <-- populate address here
+      .populate("address").sort({createdAt:-1}); // <-- populate address here
 
     if (orders.length === 0) {
       return res.status(200).json({
