@@ -6,7 +6,7 @@ import {
   getAddressById,
   deleteAddress,
   updateAddress,
-  getAddressesByType
+  getAddressByTypes
   // updateBillingAddress,
   // updateShippingAddress
 } from '../controllers/Address/AddressController';
@@ -19,7 +19,7 @@ router.get('/', verifyAccessToken, getAddresses);
 router.get('/:id', getAddressById);
 router.delete('/:id', verifyAccessToken, deleteAddress);
 router.put('/:id', verifyAccessToken, updateAddress);
-router.get('/type', verifyAccessToken, getAddressesByType);
+router.get('/types', verifyAccessToken, getAddressByTypes);
 // router.patch('/billing', updateBillingAddress); 
 // router.patch('/shipping', updateShippingAddress);
 

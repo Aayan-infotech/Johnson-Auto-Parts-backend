@@ -11,11 +11,10 @@ const addressSchema = new Schema<IAddress>({
     phoneNumber: { type: String, required: true },
     addressType: {
         type: String,
-        required: true,
         enum: Object.values(AddressType),
-        default: AddressType.SHIPPING
+        // default: AddressType.SHIPPING
     },
-    user: { type: Schema.Types.ObjectId, ref: 'User', required: true } // Assuming you have a User model
+    user: { type: Schema.Types.ObjectId, ref: 'User' } // Assuming you have a User model
 }, {
     timestamps: true // Adds createdAt and updatedAt fields
 });

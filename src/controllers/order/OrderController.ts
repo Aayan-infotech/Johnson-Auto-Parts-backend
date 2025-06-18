@@ -6,6 +6,7 @@ import Product from "../../models/ProductModel";
 import { makePayment } from "../../utills/SlimCDService";
 import { sendOrderConfirmationEmail } from "../../utills/SendOrderCreationEmail";
 import { createAddress } from "../Address/AddressController"; // adjust path accordingly
+import Address from "../../models/AddressModel";
 
 interface AuthRequest extends Request {
   user?: { userId: string; email: string };
@@ -29,21 +30,35 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // ✅ Step 1: Create address using the service
-    const addressResponse = await createAddress({
-      ...address,
-      userId,
+    const existingAddress = await Address.findOne({
+      user: userId,
+      street: address.street,
+      city: address.city,
+      state: address.state,
+      postalCode: address.postalCode,
+      country: address.country
     });
 
-    if (!addressResponse.success) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to save address",
-        error: addressResponse.message,
-      });
-    }
+    let savedAddress;
 
-    const savedAddress = addressResponse.data; // Contains the saved address document
+    if (existingAddress) {
+      savedAddress = existingAddress;
+    } else {
+      const addressResponse = await createAddress({
+        ...address,
+        userId,
+      });
+
+      if (!addressResponse.success) {
+        return res.status(500).json({
+          success: false,
+          message: "Failed to save address",
+          error: addressResponse.message,
+        });
+      }
+
+      savedAddress = addressResponse.data;
+    }
 
     let items = [];
 
@@ -89,10 +104,10 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // const totalAmount = Number(
-    //   items.reduce((total, item) => total + item.quantity * item.price, 0).toFixed(2)
-    // );
-    const totalAmount = Number(4.2);
+    const totalAmount = Number(
+      items.reduce((total, item) => total + item.quantity * item.price, 0).toFixed(2)
+    );
+    // const totalAmount = Number(totalAmount);
 
     // ✅ Process payment after validation
     const paymentResult = await makePayment({
@@ -137,26 +152,26 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
 
     const user = await User.findById(userId);
 
-    if (user?.email) {
-      try {
-        const populatedItems = await Promise.all(
-          items.map(async (item) => {
-            const product = await Product.findById(item.product).lean();
-            return { ...item, product };
-          })
-        );
+    // if (user?.email) {
+    //   try {
+    //     const populatedItems = await Promise.all(
+    //       items.map(async (item) => {
+    //         const product = await Product.findById(item.product).lean();
+    //         return { ...item, product };
+    //       })
+    //     );
 
-        await sendOrderConfirmationEmail({
-          user: { name: user.name, email: user.email },
-          address: savedAddress, // send full address object
-          order,
-          items: populatedItems,
-          totalAmount,
-        });
-      } catch (emailErr) {
-        console.error("Email sending failed:", emailErr);
-      }
-    }
+    //     await sendOrderConfirmationEmail({
+    //       user: { name: user.name, email: user.email },
+    //       address: savedAddress, // send full address object
+    //       order,
+    //       items: populatedItems,
+    //       totalAmount,
+    //     });
+    //   } catch (emailErr) {
+    //     console.error("Email sending failed:", emailErr);
+    //   }
+    // }
 
     return res.status(201).json({
       success: true,
