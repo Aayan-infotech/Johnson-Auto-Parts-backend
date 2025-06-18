@@ -64,7 +64,7 @@ const getSubcategoryByCategory = async (req: S3Request, res: Response) => {
     const subcategories = await Subcategory.find({
       isActive: true,
       categoryId: categoryId,
-    });
+    }).sort({createdAt:-1});
 
     const translatedSubcategories = subcategories.map((cat) => ({
       id: cat._id,
@@ -132,7 +132,7 @@ const getSubcategoryForAdmin = async (req: Request, res: Response) => {
   try {
     const subcategories = await Subcategory.find()
       .populate("categoryId")
-      .lean();
+      .lean().sort({createdAt:-1});
 
     if (subcategories.length === 0) {
       return res.status(200).json({

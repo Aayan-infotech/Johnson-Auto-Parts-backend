@@ -51,7 +51,7 @@ const insertCategory = async (req: S3Request, res: Response) => {
 const getCategories = async (req: S3Request, res: Response) => {
   try {
     const { lang } = req.query as { lang?: string };
-    const categories = await Category.find({ isActive: true });
+    const categories = await Category.find({ isActive: true }).sort({createdAt:-1});
 
     const translatedCategories = categories.map((cat) => ({
       id: cat._id,
@@ -182,7 +182,7 @@ const activeBlockCategory = async (req: Request, res: Response) => {
 // get categories for admin
 const getCategoriesForAdmin = async (req: Request, res: Response) => {
   try {
-    const categories = await Category.find().lean();
+    const categories = await Category.find().lean().sort({createdAt:-1});
 
     res.status(200).json({
       success: true,

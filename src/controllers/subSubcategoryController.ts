@@ -61,7 +61,7 @@ const getSubSubcategoryBySubcategoryId = async (
     const subsubcategories = await SubSubcategory.find({
       isActive: true,
       subcategoryId: objectId,
-    });
+    }).sort({createdAt:-1});
 
     const translatedSubSubcategories = subsubcategories.map((cat) => ({
       id: cat._id,
@@ -118,7 +118,7 @@ const getSubSubcategoryBySubcategoryId = async (
 // get all subsubcategories
 const getAllSubSubcategories = async (req: Request, res: Response) => {
   try {
-    const subSubcategories = await SubSubcategory.find();
+    const subSubcategories = await SubSubcategory.find().sort({createdAt:-1});
 
     if (!subSubcategories || subSubcategories.length === 0) {
       return res.status(200).json({
