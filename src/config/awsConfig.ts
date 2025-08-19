@@ -27,7 +27,7 @@ export const getAwsCredentials = async (): Promise<{ accessKeyId: string; secret
   // }
 
   try {
-    const command = new GetSecretValueCommand({ SecretId: 'john4' });
+    const command = new GetSecretValueCommand({ SecretId: 'auto-parts' });
     const data = await secretsManagerClient.send(command);
 
     if (data.SecretString) { 
