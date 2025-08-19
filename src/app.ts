@@ -14,7 +14,7 @@ connectDB();
 const app: Application = express();
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "john-secret",
+    secret: process.env.SESSION_SECRET || "auto-parts",
     resave: false,
     saveUninitialized: false, // Change this to false
     store: MongoStore.create({
