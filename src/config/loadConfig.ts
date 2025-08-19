@@ -51,7 +51,7 @@ async function getConfig(): Promise<Config> {
   if (ENV === "production") {
     try {
       const command = new GetSecretValueCommand({
-        SecretId: "john4",
+        SecretId: "auto-parts",
       });
       const response = await secretsManager.send(command);
 
