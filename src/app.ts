@@ -19,7 +19,7 @@ app.use(
     saveUninitialized: false, // Change this to false
     store: MongoStore.create({
       mongoUrl:
-        "mongodb+srv://ujjwalsingh:ujjwal123@cluster0.qbl1z.mongodb.net/autoparts",
+        "mongodb+srv://robert:TKGIDJuwsqlfYvRS@cluster0.vnrxr0v.mongodb.net/autoparts",
     }),
     cookie: {
       maxAge: 1000 * 60 * 60 * 24, // 1 day
@@ -37,9 +37,9 @@ app.use(express.urlencoded({ extended: false }));
 app.use(
   cors({
     origin: [
-      "http://3.223.253.106:2564",
+      "http://3.208.14.86:2027",
       "http://localhost:5173",
-      "http://3.223.253.106:6542",
+      "http://3.208.14.86:2025",
       "http://localhost:3000",
       "http://18.209.91.97:2564",
       "http://18.209.91.97:6542",
