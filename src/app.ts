@@ -37,7 +37,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(
   cors({
     origin: [
-      "http://3.208.14.86:2027",
+      "http://3.208.14.86:2564",
       "http://localhost:5173",
       "http://3.208.14.86:2025",
       "http://localhost:3000",
