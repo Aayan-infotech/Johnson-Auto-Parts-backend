@@ -37,7 +37,7 @@ interface Config {
 // Default configuration that doesn't change between environments
 const defaultConfig = {
   SESSION_SECRET: "john-session",
-  BUCKET_NAME: "robert-64qi1m2t",
+  BUCKET_NAME: "auto-parts-bucket-sdfgh",
   AWS_REGION: "us-east-1",
   SLIMCD_USERNAME: "R6UT8C6M",
   SLIMCD_PASSWORD: "iamgroot",
